@@ -3,18 +3,12 @@
 from __future__ import annotations
 
 import os
-import sys
-from dataclasses import dataclass, field
+import tomllib
+from dataclasses import dataclass
 from pathlib import Path
 from typing import Any
 
 from deepseek_tui.config.defaults import DEFAULTS
-
-if sys.version_info >= (3, 11):
-    import tomllib
-else:
-    import tomli as tomllib  # type: ignore
-
 
 CONFIG_DIR = Path.home() / ".config" / "deepseek-tui"
 CONFIG_PATH = CONFIG_DIR / "config.toml"

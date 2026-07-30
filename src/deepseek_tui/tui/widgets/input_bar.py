@@ -1,7 +1,7 @@
 """Input bar — text input with send button and command hints."""
 
-from textual.containers import Horizontal, Container
-from textual.widgets import Input, Button, Static
+from textual.containers import Container, Horizontal
+from textual.widgets import Button, Input, Static
 
 
 class CommandHints(Static):

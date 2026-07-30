@@ -1,14 +1,14 @@
 """Main TUI screen with chat-primary layout, sidebar, header, and input bar."""
 
-from textual.screen import Screen
 from textual.containers import Container
+from textual.screen import Screen
 
-from deepseek_tui.tui.widgets.header import Header
-from deepseek_tui.tui.widgets.chat import ChatView
-from deepseek_tui.tui.widgets.sidebar import Sidebar
-from deepseek_tui.tui.widgets.input_bar import InputBar
-from deepseek_tui.tui.commands import parse_command
 from deepseek_tui.engine.ai_client import Message
+from deepseek_tui.tui.commands import parse_command
+from deepseek_tui.tui.widgets.chat import ChatView
+from deepseek_tui.tui.widgets.header import Header
+from deepseek_tui.tui.widgets.input_bar import InputBar
+from deepseek_tui.tui.widgets.sidebar import Sidebar
 
 
 class MainScreen(Screen):

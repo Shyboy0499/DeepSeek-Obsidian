@@ -3,9 +3,9 @@
 from __future__ import annotations
 
 import json
+from collections.abc import AsyncIterator
 from dataclasses import dataclass
 from enum import Enum
-from typing import AsyncIterator
 
 import httpx
 
@@ -13,6 +13,9 @@ from deepseek_tui.engine.vault import Note
 
 
 class AIProvider(Enum):
+    base_url: str
+    default_model: str
+
     DEEPSEEK = ("deepseek", "https://api.deepseek.com/v1", "deepseek-chat")
     ANTHROPIC = ("anthropic", "https://api.anthropic.com/v1", "claude-sonnet-4-6")
     OPENAI = ("openai", "https://api.openai.com/v1", "gpt-4o")
@@ -62,7 +65,7 @@ class AIClient:
             headers["Authorization"] = f"Bearer {self.api_key}"
         return headers
 
-    def _build_body(self, messages: list[Message]) -> dict:
+    def _build_body(self, messages: list[Message]) -> dict[str, object]:
         return {
             "model": self.model,
             "messages": [m.to_dict() for m in messages],

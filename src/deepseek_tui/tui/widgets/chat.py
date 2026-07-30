@@ -7,15 +7,15 @@ from textual.widgets import Static
 class ChatMessage(Static):
     """A single message bubble in the chat."""
 
-    def __init__(self, role: str, content: str = ""):
+    def __init__(self, role: str, text: str = ""):
         super().__init__("")
         self.role = role
-        self.content = content
+        self.text = text
 
     def on_mount(self) -> None:
-        self._render()
+        self._refresh()
 
-    def _render(self) -> None:
+    def _refresh(self) -> None:
         if self.role == "user":
             prefix = "🧑 You"
         elif self.role == "assistant":
@@ -23,12 +23,12 @@ class ChatMessage(Static):
         else:
             prefix = "⚙️ System"
 
-        self.update(f"[bold]{prefix}[/bold]\n\n{self.content}")
+        self.update(f"[bold]{prefix}[/bold]\n\n{self.text}")
 
     def append_chunk(self, chunk: str) -> None:
         """Stream a chunk of content to this message."""
-        self.content += chunk
-        self._render()
+        self.text += chunk
+        self._refresh()
 
 
 class ChatView(VerticalScroll):
@@ -39,12 +39,12 @@ class ChatView(VerticalScroll):
         self._current_assistant_message: ChatMessage | None = None
 
     def add_user_message(self, content: str) -> None:
-        msg = ChatMessage(role="user", content=content)
+        msg = ChatMessage(role="user", text=content)
         self.mount(msg)
         self.scroll_end()
 
     def start_assistant_message(self) -> None:
-        msg = ChatMessage(role="assistant", content="")
+        msg = ChatMessage(role="assistant", text="")
         self._current_assistant_message = msg
         self.mount(msg)
 

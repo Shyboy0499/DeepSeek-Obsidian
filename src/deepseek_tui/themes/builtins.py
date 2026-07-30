@@ -1,6 +1,6 @@
 """Built-in TUI theme color definitions."""
 
-THEMES: dict[str, dict] = {
+THEMES: dict[str, dict[str, object]] = {
     "dracula": {
         "name": "dracula",
         "dark": True,

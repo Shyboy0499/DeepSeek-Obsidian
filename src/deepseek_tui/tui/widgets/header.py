@@ -1,8 +1,8 @@
 """Header bar — shows app title, permission posture, and vault name."""
 
 from textual.containers import Horizontal
-from textual.widgets import Static
 from textual.reactive import reactive
+from textual.widgets import Static
 
 
 class Header(Horizontal):

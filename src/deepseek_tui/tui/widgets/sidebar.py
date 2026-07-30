@@ -1,7 +1,7 @@
 """Sidebar widget — referenced notes panel and search results."""
 
-from textual.containers import Vertical, Container
-from textual.widgets import Static, Input, ListView, ListItem
+from textual.containers import Container, Vertical
+from textual.widgets import Input, ListItem, ListView, Static
 
 
 class ReferencedNotesPanel(Vertical):

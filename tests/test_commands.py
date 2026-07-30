@@ -1,6 +1,7 @@
 """Tests for slash command system."""
 
 import pytest
+
 from deepseek_tui.tui.commands import (
     Command,
     CommandRegistry,
@@ -33,7 +34,10 @@ class TestParseCommand:
 class TestCommandRegistry:
     def test_registers_and_finds_command(self):
         registry = CommandRegistry()
-        registry.register(Command(name="test", description="Test command", handler=lambda args: "ok"))
+        registry.register(Command(
+            name="test", description="Test command",
+            handler=lambda args: "ok",
+        ))
         cmd = registry.get("test")
         assert cmd is not None
         assert cmd.name == "test"

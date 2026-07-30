@@ -3,8 +3,9 @@
 import os
 import tempfile
 from pathlib import Path
-from deepseek_tui.config.loader import load_config, Config
+
 from deepseek_tui.config.defaults import DEFAULTS
+from deepseek_tui.config.loader import load_config
 
 
 class TestDefaults:
