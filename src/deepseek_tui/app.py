@@ -100,13 +100,13 @@ class DeepSeekTuiApp(App):
     BINDINGS = [
         ("tab", "cycle_permission", "Cycle Permission"),
         ("ctrl+n", "focus_sidebar", "Focus Sidebar"),
-        ("ctrl+c", "focus_chat", "Focus Chat"),
+        ("ctrl+l", "focus_chat", "Focus Chat"),
         ("ctrl+s", "quick_search", "Quick Search"),
         ("ctrl+b", "toggle_sidebar", "Toggle Sidebar"),
         ("ctrl+q", "quit", "Quit"),
     ]
 
-    def __init__(self):
+    def __init__(self, cli_vault: str | None = None):
         super().__init__()
         self.config = load_config()
         self.permissions = Permissions(
@@ -115,9 +115,12 @@ class DeepSeekTuiApp(App):
         self.vault: VaultReader | None = None
         self.ai_client = None
         self.context_builder: ContextBuilder | None = None
+        self._cli_vault = cli_vault
 
     def on_mount(self) -> None:
-        if self.config.vault_path and self.config.vault_path.exists():
+        if self._cli_vault:
+            self._load_vault(Path(self._cli_vault).expanduser())
+        elif self.config.vault_path and self.config.vault_path.exists():
             self._load_vault(self.config.vault_path)
         else:
             self._auto_detect_vault()
@@ -385,7 +388,7 @@ class DeepSeekTuiApp(App):
             "Keybindings:",
             "  Tab — Cycle permission posture",
             "  Ctrl+N — Focus sidebar",
-            "  Ctrl+C — Focus chat",
+            "  Ctrl+L — Focus chat",
             "  Ctrl+S — Quick vault search",
             "  Ctrl+B — Toggle sidebar",
         ])
@@ -393,7 +396,23 @@ class DeepSeekTuiApp(App):
 
 
 def main() -> None:
-    app = DeepSeekTuiApp()
+    import argparse
+    from deepseek_tui import __version__
+
+    parser = argparse.ArgumentParser(
+        prog="deepseek-tui",
+        description="AI-native note-taking and research assistant for the terminal with Obsidian integration.",
+    )
+    parser.add_argument(
+        "--version", action="version", version=f"deepseek-tui {__version__}"
+    )
+    parser.add_argument(
+        "--vault", type=str, metavar="PATH",
+        help="Path to Obsidian vault (bypasses auto-detection)",
+    )
+    args = parser.parse_args()
+
+    app = DeepSeekTuiApp(cli_vault=args.vault)
     app.run()
 
 
