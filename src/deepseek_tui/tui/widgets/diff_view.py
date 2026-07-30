@@ -1,7 +1,7 @@
 """Diff view widget — displays proposed note edits inline with accept/reject."""
 
 from textual.containers import Container, Horizontal
-from textual.widgets import Static, Button
+from textual.widgets import Button, Static
 
 
 class DiffView(Container):

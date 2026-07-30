@@ -1,12 +1,11 @@
 """Tests for permission model and audit trail."""
 
-import json
 import tempfile
 from pathlib import Path
 
 import pytest
+
 from deepseek_tui.engine.permissions import (
-    AuditEntry,
     AuditTrail,
     PermissionLevel,
     Permissions,

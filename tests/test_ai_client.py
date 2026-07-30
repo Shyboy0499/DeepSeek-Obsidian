@@ -1,9 +1,10 @@
 """Tests for multi-provider AI client."""
 
 import pytest
+
 from deepseek_tui.engine.ai_client import (
-    AIProvider,
     AIClient,
+    AIProvider,
     Message,
     StreamChunk,
     create_client,

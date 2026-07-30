@@ -8,7 +8,6 @@ from pathlib import Path
 
 import frontmatter
 
-
 WIKILINK_PATTERN = re.compile(r"\[\[([^\]]+)\]\]")
 
 
@@ -109,7 +108,7 @@ class VaultReader:
         target = target_title.lower().strip()
         results: list[Note] = []
         for note in self._notes:
-            links = [l.lower().strip() for l in note.wikilinks()]
+            links = [link.lower().strip() for link in note.wikilinks()]
             if target in links:
                 results.append(note)
         return results

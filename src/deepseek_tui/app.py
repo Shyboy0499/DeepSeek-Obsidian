@@ -7,10 +7,10 @@ from pathlib import Path
 from textual.app import App
 
 from deepseek_tui.config.loader import load_config
-from deepseek_tui.engine.vault import VaultReader
 from deepseek_tui.engine.ai_client import create_client
 from deepseek_tui.engine.context import ContextBuilder
-from deepseek_tui.engine.permissions import Permissions, PermissionLevel
+from deepseek_tui.engine.permissions import PermissionLevel, Permissions
+from deepseek_tui.engine.vault import VaultReader
 from deepseek_tui.tui.screen import MainScreen
 
 
@@ -190,17 +190,50 @@ class DeepSeekTuiApp(App):
 
         registry = CommandRegistry()
 
-        registry.register(Command(name="model", description="Switch AI provider/model", handler=self._cmd_model))
-        registry.register(Command(name="search", description="Search the vault", handler=self._cmd_search))
-        registry.register(Command(name="open", description="Open a note by wikilink", handler=self._cmd_open))
-        registry.register(Command(name="save", description="Save last AI response as a note", handler=self._cmd_save))
-        registry.register(Command(name="link", description="Create a wikilink between notes", handler=self._cmd_link))
-        registry.register(Command(name="vault", description="Switch to a different vault", handler=self._cmd_vault))
-        registry.register(Command(name="export", description="Export chat to markdown", handler=self._cmd_export))
-        registry.register(Command(name="clear", description="Clear current chat", handler=self._cmd_clear))
-        registry.register(Command(name="theme", description="Switch TUI theme", handler=self._cmd_theme))
-        registry.register(Command(name="perm", description="Set permission posture", handler=self._cmd_perm))
-        registry.register(Command(name="help", description="Show available commands", handler=self._cmd_help))
+        registry.register(Command(
+            name="model", description="Switch AI provider/model",
+            handler=self._cmd_model,
+        ))
+        registry.register(Command(
+            name="search", description="Search the vault",
+            handler=self._cmd_search,
+        ))
+        registry.register(Command(
+            name="open", description="Open a note by wikilink",
+            handler=self._cmd_open,
+        ))
+        registry.register(Command(
+            name="save", description="Save last AI response as a note",
+            handler=self._cmd_save,
+        ))
+        registry.register(Command(
+            name="link", description="Create a wikilink between notes",
+            handler=self._cmd_link,
+        ))
+        registry.register(Command(
+            name="vault", description="Switch to a different vault",
+            handler=self._cmd_vault,
+        ))
+        registry.register(Command(
+            name="export", description="Export chat to markdown",
+            handler=self._cmd_export,
+        ))
+        registry.register(Command(
+            name="clear", description="Clear current chat",
+            handler=self._cmd_clear,
+        ))
+        registry.register(Command(
+            name="theme", description="Switch TUI theme",
+            handler=self._cmd_theme,
+        ))
+        registry.register(Command(
+            name="perm", description="Set permission posture",
+            handler=self._cmd_perm,
+        ))
+        registry.register(Command(
+            name="help", description="Show available commands",
+            handler=self._cmd_help,
+        ))
         return registry
 
     def _cmd_model(self, args: str) -> str:
@@ -211,7 +244,10 @@ class DeepSeekTuiApp(App):
             self.config.provider = provider
             if model:
                 self.config.model = model
-            self.ai_client = create_client(provider, model or "deepseek-chat", api_key=self.config.api_key)
+            self.ai_client = create_client(
+                provider, model or "deepseek-chat",
+                api_key=self.config.api_key,
+            )
             return f"Switched to {provider}/{model or 'default'}"
         return "Usage: /model <provider> [model]"
 
@@ -275,7 +311,10 @@ class DeepSeekTuiApp(App):
         if note:
             content = note.content + f"\n\nSee also: [[{to_note}]]"
             note.path.write_text(content)
-            self.permissions.audit_trail.record("write", str(note.path), f"Added link to [[{to_note}]]")
+            self.permissions.audit_trail.record(
+                "write", str(note.path),
+                f"Added link to [[{to_note}]]",
+            )
             return f"Linked [[{from_note}]] -> [[{to_note}]]"
         return f"Note not found: {from_note}"
 
@@ -292,7 +331,10 @@ class DeepSeekTuiApp(App):
         return f"Not a valid Obsidian vault: {path}"
 
     def _cmd_export(self, args: str) -> str:
-        path = Path(args.strip()).expanduser() if args.strip() else Path.home() / "deepseek-chat-export.md"
+        path = (
+            Path(args.strip()).expanduser() if args.strip()
+            else Path.home() / "deepseek-chat-export.md"
+        )
         screen = self.screen
         if isinstance(screen, MainScreen):
             lines = []

@@ -1,7 +1,8 @@
 """Tests for vault reader."""
 
 from pathlib import Path
-from deepseek_tui.engine.vault import VaultReader, Note, scan_vault
+
+from deepseek_tui.engine.vault import Note, VaultReader, scan_vault
 
 
 class TestNote:
