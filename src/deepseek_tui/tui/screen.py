@@ -7,6 +7,8 @@ from deepseek_tui.tui.widgets.header import Header
 from deepseek_tui.tui.widgets.chat import ChatView
 from deepseek_tui.tui.widgets.sidebar import Sidebar
 from deepseek_tui.tui.widgets.input_bar import InputBar
+from deepseek_tui.tui.commands import parse_command
+from deepseek_tui.engine.ai_client import Message
 
 
 class MainScreen(Screen):
@@ -60,3 +62,68 @@ class MainScreen(Screen):
     @property
     def sidebar(self) -> Sidebar:
         return self.query_one(Sidebar)
+
+    def on_input_submitted(self, event) -> None:
+        """Handle Enter in the chat input."""
+        if event.input.id != "chat-input":
+            return
+        text = event.value.strip()
+        if not text:
+            return
+        event.input.value = ""
+
+        cmd_name, cmd_args = parse_command(text)
+
+        if cmd_name:
+            self._handle_command(cmd_name, cmd_args, text)
+        else:
+            self.chat_view.add_user_message(text)
+            if self._app.context_builder and self._app.ai_client:
+                import asyncio
+                asyncio.create_task(self._send_to_ai(text))
+
+    def _handle_command(self, cmd_name: str, cmd_args: str, raw_text: str) -> None:
+        """Execute a slash command and show the result in chat."""
+        self.chat_view.add_user_message(raw_text)
+        try:
+            result = self._app._command_registry.execute(cmd_name, cmd_args)
+            if isinstance(result, str):
+                self.chat_view.start_assistant_message()
+                self.chat_view.stream_chunk(result)
+                self.chat_view.finish_assistant_message()
+        except ValueError as e:
+            self.chat_view.start_assistant_message()
+            self.chat_view.stream_chunk(f"[red]{e}[/red]")
+            self.chat_view.finish_assistant_message()
+
+    async def _send_to_ai(self, text: str) -> None:
+        """Send user message to AI and stream the response."""
+        if not self._app.context_builder or not self._app.ai_client:
+            self.chat_view.start_assistant_message()
+            self.chat_view.stream_chunk("No vault or AI client configured.")
+            self.chat_view.finish_assistant_message()
+            return
+
+        messages, context_notes = self._app.context_builder.build(
+            text,
+            permission_level=self._app.permissions.level.value,
+        )
+
+        notes_data = [(n.title, str(n.path)) for n in context_notes]
+        self.sidebar.notes_panel.set_notes(notes_data)
+
+        self.chat_view.start_assistant_message()
+        full_response = ""
+        try:
+            async for chunk in self._app.ai_client.stream(messages):
+                if chunk.content:
+                    full_response += chunk.content
+                    self.chat_view.stream_chunk(chunk.content)
+        except Exception as e:
+            error_msg = f"\n\n[red]Error: {e}[/red]"
+            full_response += error_msg
+            self.chat_view.stream_chunk(error_msg)
+        self.chat_view.finish_assistant_message()
+
+        self._app.context_builder.history.add(Message(role="user", content=text))
+        self._app.context_builder.history.add(Message(role="assistant", content=full_response))
