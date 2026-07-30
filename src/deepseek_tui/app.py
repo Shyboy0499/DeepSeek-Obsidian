@@ -129,7 +129,7 @@ class DeepSeekTuiApp(App):
                 api_key=self.config.api_key,
             )
 
-        self._detect_and_load_vault()
+        self.call_after_refresh(self._detect_and_load_vault)
 
     def _detect_and_load_vault(self) -> None:
         if self._cli_vault:
@@ -153,8 +153,8 @@ class DeepSeekTuiApp(App):
                 f"Found {len(candidates)} vaults. "
                 "Use /vault with a number to pick one:"
             ]
+            self._vault_candidates = candidates
             for i, path in enumerate(candidates, 1):
-                self._vault_candidates = candidates
                 lines.append(f"  [{i}] {path}")
             self._notify_chat("\n".join(lines))
 
