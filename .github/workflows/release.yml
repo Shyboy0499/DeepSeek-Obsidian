@@ -47,10 +47,16 @@ jobs:
             --collect-all textual \
             src/deepseek_tui/app.py
 
-      - name: Verify binary runs
+      - name: Verify binary
         run: |
-          ./dist/deepseek-tui-macos-* --help 2>&1 || true
-          echo "Binary built successfully at dist/"
+          BINARY=$(ls ./dist/deepseek-tui-macos-* 2>/dev/null | head -1)
+          if [ -f "$BINARY" ] && [ -x "$BINARY" ]; then
+            echo "Binary built: $(file "$BINARY")"
+            echo "Size: $(ls -lh "$BINARY" | awk '{print $5}')"
+          else
+            echo "ERROR: Binary not found"
+            exit 1
+          fi
 
       - name: Upload binary artifact
         uses: actions/upload-artifact@v4
