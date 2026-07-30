@@ -151,7 +151,22 @@ class MainScreen(Screen):
                     full_response += chunk.content
                     self.chat_view.stream_chunk(chunk.content)
         except Exception as e:
-            error_msg = f"[red]Error: {e}[/red]"
+            err_str = str(e)
+            if "401" in err_str or "Unauthorized" in err_str:
+                client = self._app.ai_client
+                has_key = client.api_key is not None if client else False
+                key_env = {
+                    "deepseek": "DEEPSEEK_API_KEY",
+                    "anthropic": "ANTHROPIC_API_KEY",
+                    "openai": "OPENAI_API_KEY",
+                }.get(client.provider.value if client else "", "API key")
+                error_msg = (
+                    f"[red]401 Unauthorized[/red]\n"
+                    f"Provider: {client.provider.value if client else '?'}\n"
+                    f"Key set: {'yes' if has_key else 'NO — export ' + key_env}"
+                )
+            else:
+                error_msg = f"[red]Error: {err_str}[/red]"
             full_response = error_msg
             self.chat_view.stream_chunk(f"\n{error_msg}")
         self.chat_view.finish_assistant_message()
