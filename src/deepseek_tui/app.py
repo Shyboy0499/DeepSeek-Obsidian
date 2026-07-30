@@ -285,7 +285,7 @@ class DeepSeekTuiApp(App):
             for child in reversed(list(chat_view.children)):
                 from deepseek_tui.tui.widgets.chat import ChatMessage
                 if isinstance(child, ChatMessage) and child.role == "assistant":
-                    content = child.content
+                    content = child.text
                     break
             else:
                 return "No AI response to save."
@@ -293,7 +293,7 @@ class DeepSeekTuiApp(App):
             return "No AI response to save."
         filename = args.strip() if args.strip() else "untitled.md"
         filepath = self.vault.vault_path / filename
-        filepath.write_text(content)
+        filepath.write_text(str(content))
         self.permissions.audit_trail.record("write", filename, "Created note from AI response")
         return f"Saved to {filename}"
 
@@ -341,7 +341,7 @@ class DeepSeekTuiApp(App):
             from deepseek_tui.tui.widgets.chat import ChatMessage
             for child in screen.chat_view.children:
                 if isinstance(child, ChatMessage):
-                    lines.append(f"## {child.role}\n\n{child.content}\n")
+                    lines.append(f"## {child.role}\n\n{child.text}\n")
             path.write_text("\n---\n".join(lines))
             return f"Chat exported to {path}"
         return "Nothing to export."
