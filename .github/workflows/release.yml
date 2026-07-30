@@ -1,0 +1,97 @@
+name: Release
+
+on:
+  push:
+    tags:
+      - "v*"
+
+jobs:
+  build-macos:
+    runs-on: macos-latest
+    strategy:
+      matrix:
+        arch: [arm64, x86_64]
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -e ".[dev]"
+
+      - name: Build binary with PyInstaller
+        run: |
+          if [ "${{ matrix.arch }}" = "x86_64" ]; then
+            TARGET_ARCH="x86_64"
+          else
+            TARGET_ARCH="arm64"
+          fi
+          pyinstaller \
+            --onefile \
+            --name "deepseek-tui-macos-${TARGET_ARCH}" \
+            --add-data "src/deepseek_tui:deepseek_tui" \
+            --hidden-import textual \
+            --hidden-import textual.widgets \
+            --hidden-import textual.containers \
+            --hidden-import textual.reactive \
+            --hidden-import textual.screen \
+            --hidden-import textual.app \
+            --hidden-import httpx \
+            --hidden-import frontmatter \
+            --collect-all textual \
+            src/deepseek_tui/app.py
+
+      - name: Verify binary
+        run: |
+          BINARY=$(ls ./dist/deepseek-tui-macos-* 2>/dev/null | head -1)
+          if [ -f "$BINARY" ] && [ -x "$BINARY" ]; then
+            echo "Binary built: $(file "$BINARY")"
+            echo "Size: $(ls -lh "$BINARY" | awk '{print $5}')"
+          else
+            echo "ERROR: Binary not found"
+            exit 1
+          fi
+
+      - name: Upload binary artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: deepseek-tui-macos-${{ matrix.arch }}
+          path: dist/deepseek-tui-macos-*
+
+  release:
+    needs: build-macos
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Download all artifacts
+        uses: actions/download-artifact@v4
+        with:
+          path: dist/
+
+      - name: Prepare release assets
+        run: |
+          mkdir -p release-assets
+          find dist/ -type f -name "deepseek-tui-*" -exec cp {} release-assets/ \;
+          ls -la release-assets/
+
+      - name: Generate SHA256 checksums
+        run: |
+          cd release-assets
+          shasum -a 256 * > checksums.txt
+          cat checksums.txt
+
+      - name: Create GitHub Release
+        uses: softprops/action-gh-release@v2
+        with:
+          files: release-assets/*
+          generate_release_notes: true
