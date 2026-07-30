@@ -84,14 +84,17 @@ class MainScreen(Screen):
 
     def _handle_command(self, cmd_name: str, cmd_args: str, raw_text: str) -> None:
         """Execute a slash command and show the result in chat."""
-        self.chat_view.add_user_message(raw_text)
         try:
             result = self._app._command_registry.execute(cmd_name, cmd_args)
+            if result is None:
+                return  # Modal commands handle their own UI (e.g. /help)
             if isinstance(result, str):
+                self.chat_view.add_user_message(raw_text)
                 self.chat_view.start_assistant_message()
                 self.chat_view.stream_chunk(result)
                 self.chat_view.finish_assistant_message()
         except ValueError as e:
+            self.chat_view.add_user_message(raw_text)
             self.chat_view.start_assistant_message()
             self.chat_view.stream_chunk(f"[red]{e}[/red]")
             self.chat_view.finish_assistant_message()

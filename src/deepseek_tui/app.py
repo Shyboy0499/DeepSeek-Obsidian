@@ -103,6 +103,7 @@ class DeepSeekTuiApp(App):
         ("ctrl+l", "focus_chat", "Focus Chat"),
         ("ctrl+s", "quick_search", "Quick Search"),
         ("ctrl+b", "toggle_sidebar", "Toggle Sidebar"),
+        ("ctrl+z", "undo", "Undo"),
         ("ctrl+q", "quit", "Quit"),
     ]
 
@@ -216,6 +217,29 @@ class DeepSeekTuiApp(App):
         if isinstance(screen, MainScreen):
             screen.toggle_sidebar()
 
+    def action_undo(self) -> None:
+        entry = self.permissions.audit_trail.pop_last_write()
+        if entry is None:
+            self._notify_chat("Nothing to undo.")
+            return
+
+        target = Path(entry.target)
+        if entry.previous_content == "__NEW_FILE__":
+            # Undo a file creation — delete the file
+            if target.exists():
+                target.unlink()
+                self._notify_chat(f"Undo: deleted {target.name}")
+        elif entry.previous_content:
+            # Undo a modification — restore previous content
+            target.write_text(entry.previous_content)
+            self._notify_chat(f"Undo: restored {target.name}")
+        else:
+            self._notify_chat(f"Cannot undo: no previous state saved for {target.name}")
+
+        # Refresh vault if loaded
+        if self.vault:
+            self.vault.refresh()
+
     def _build_command_registry(self):
         from deepseek_tui.tui.commands import Command, CommandRegistry
 
@@ -268,19 +292,34 @@ class DeepSeekTuiApp(App):
         return registry
 
     def _cmd_model(self, args: str) -> str:
+        if not args.strip():
+            provider = self.ai_client.provider if self.ai_client else self.config.provider
+            return (
+                f"Current: {provider}. "
+                "Usage: /model <provider> [model]\n"
+                "Providers: deepseek, anthropic, openai, ollama"
+            )
+
         parts = args.split()
-        if len(parts) >= 1:
-            provider = parts[0]
-            model = parts[1] if len(parts) > 1 else None
-            self.config.provider = provider
-            if model:
-                self.config.model = model
+        provider_name = parts[0]
+        model = parts[1] if len(parts) > 1 else None
+
+        try:
+            from deepseek_tui.engine.ai_client import AIProvider
+            prov = AIProvider.from_string(provider_name)
+            chosen_model = model or prov.default_model
             self.ai_client = create_client(
-                provider, model or "deepseek-chat",
+                provider_name, chosen_model,
                 api_key=self.config.api_key,
             )
-            return f"Switched to {provider}/{model or 'default'}"
-        return "Usage: /model <provider> [model]"
+            self.config.provider = provider_name
+            self.config.model = chosen_model
+            return f"Switched to {provider_name}/{chosen_model}"
+        except ValueError:
+            return (
+                f"Unknown provider: {provider_name}. "
+                "Available: deepseek, anthropic, openai, ollama"
+            )
 
     def _cmd_search(self, args: str) -> str:
         if not self.vault or not args:
@@ -328,7 +367,10 @@ class DeepSeekTuiApp(App):
         filename = args.strip() if args.strip() else "untitled.md"
         filepath = self.vault.vault_path / filename
         filepath.write_text(str(content))
-        self.permissions.audit_trail.record("write", filename, "Created note from AI response")
+        self.permissions.audit_trail.record(
+            "write", str(filepath), "Created note from AI response",
+            previous_content="__NEW_FILE__",
+        )
         return f"Saved to {filename}"
 
     def _cmd_link(self, args: str) -> str:
@@ -343,11 +385,13 @@ class DeepSeekTuiApp(App):
             return f"Would link [[{from_note}]] -> [[{to_note}]] (Full Access required)."
         note = self.vault.resolve_wikilink(from_note)
         if note:
-            content = note.content + f"\n\nSee also: [[{to_note}]]"
+            prev = note.content
+            content = prev + f"\n\nSee also: [[{to_note}]]"
             note.path.write_text(content)
             self.permissions.audit_trail.record(
                 "write", str(note.path),
                 f"Added link to [[{to_note}]]",
+                previous_content=prev,
             )
             return f"Linked [[{from_note}]] -> [[{to_note}]]"
         return f"Note not found: \"{from_note}\" — check the title with /search"
@@ -423,20 +467,24 @@ class DeepSeekTuiApp(App):
         except ValueError:
             return "Usage: /perm ask|review|full  (or press Tab to cycle)"
 
-    def _cmd_help(self, args: str) -> str:
-        lines = ["Available commands:", ""]
-        for cmd in self._command_registry.list_commands():
-            lines.append(f"  /{cmd.name} — {cmd.description}")
-        lines.extend([
-            "",
-            "Keybindings:",
+    def _cmd_help(self, args: str) -> str | None:
+        from deepseek_tui.tui.screens.help import HelpModal
+
+        commands = [
+            f"  /{cmd.name} — {cmd.description}"
+            for cmd in self._command_registry.list_commands()
+        ]
+        keybindings = [
             "  Tab — Cycle permission posture",
             "  Ctrl+N — Focus sidebar",
             "  Ctrl+L — Focus chat",
             "  Ctrl+S — Quick vault search",
             "  Ctrl+B — Toggle sidebar",
-        ])
-        return "\n".join(lines)
+            "  Ctrl+Z — Undo last write",
+            "  Ctrl+Q — Quit",
+        ]
+        self.push_screen(HelpModal(commands, keybindings))
+        return None
 
 
 def main() -> None:

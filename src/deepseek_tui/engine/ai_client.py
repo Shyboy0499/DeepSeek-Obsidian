@@ -35,6 +35,15 @@ class AIProvider(Enum):
                 return provider
         raise ValueError(f"Unknown provider: {s}")
 
+    @classmethod
+    def known_models(cls) -> dict[str, list[str]]:
+        return {
+            "deepseek": ["deepseek-chat", "deepseek-reasoner"],
+            "anthropic": ["claude-sonnet-4-6", "claude-opus-4-8", "claude-haiku-4-5"],
+            "openai": ["gpt-4o", "gpt-4o-mini"],
+            "ollama": ["llama3", "mistral", "codellama", "phi3"],
+        }
+
 
 @dataclass
 class Message:
