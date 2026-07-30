@@ -280,7 +280,10 @@ class DeepSeekTuiApp(App):
         if not self.vault:
             return "No vault loaded. Use /vault <path> to open one."
         if not self.permissions.can_write():
-            return "Cannot save: permission is 'Ask' (read-only). Press Tab to cycle to Full Access, or use /perm full."
+            return (
+                "Cannot save: permission is 'Ask' (read-only). "
+                "Press Tab to cycle to Full Access, or use /perm full."
+            )
         screen = self.screen
         if isinstance(screen, MainScreen):
             chat_view = screen.chat_view
@@ -397,11 +400,15 @@ class DeepSeekTuiApp(App):
 
 def main() -> None:
     import argparse
+
     from deepseek_tui import __version__
 
     parser = argparse.ArgumentParser(
         prog="deepseek-tui",
-        description="AI-native note-taking and research assistant for the terminal with Obsidian integration.",
+        description=(
+            "AI-native note-taking and research assistant "
+            "for the terminal with Obsidian integration."
+        ),
     )
     parser.add_argument(
         "--version", action="version", version=f"deepseek-tui {__version__}"
