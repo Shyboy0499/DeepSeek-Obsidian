@@ -96,15 +96,27 @@ class AIClient:
         if permission_level == "ask":
             lines.append(
                 "You may READ notes, SEARCH the vault, and SUGGEST links or edits. "
-                "You may NOT write to the vault. When you propose an edit or new note, "
-                "present it as a suggestion for the user to approve."
+                "You may NOT write to the vault."
             )
-        elif permission_level == "review":
+        elif permission_level in ("review", "full"):
             lines.append(
-                "You may READ notes, SEARCH the vault, PROPOSE edits, and DRAFT new notes. "
+                "You may READ notes, SEARCH the vault, PROPOSE edits, and DRAFT notes. "
                 "Proposed changes will be reviewed by the user before being written."
             )
-        elif permission_level == "full":
+            lines.append("")
+            lines.append(
+                "To propose an edit to an existing note, use this format:\n"
+                "```\n"
+                "---PROPOSE title=\"Note Title\"\n"
+                "the exact text to find and replace\n"
+                "+++\n"
+                "the new replacement text\n"
+                "---ENDPROPOSE\n"
+                "```\n"
+                "The old text must match exactly (including whitespace) "
+                "for the edit to be applied."
+            )
+        if permission_level == "full":
             lines.append(
                 "You have FULL ACCESS. You may read, edit, and create notes. "
                 "All writes are logged to an audit trail."

@@ -1,14 +1,40 @@
 """Main TUI screen with chat-primary layout, sidebar, header, and input bar."""
 
+import re
+
 from textual.containers import Container
 from textual.screen import Screen
 
 from deepseek_tui.engine.ai_client import Message
 from deepseek_tui.tui.commands import parse_command
 from deepseek_tui.tui.widgets.chat import ChatView
+from deepseek_tui.tui.widgets.diff_view import DiffView
 from deepseek_tui.tui.widgets.header import Header
 from deepseek_tui.tui.widgets.input_bar import InputBar
 from deepseek_tui.tui.widgets.sidebar import Sidebar
+
+PROPOSAL_PATTERN = re.compile(
+    r'---PROPOSE title="(?P<title>[^"]+)"\s*\n'
+    r"(?P<old>.*?)\n\+\+\+\s*\n(?P<new>.*?)\n---ENDPROPOSE",
+    re.DOTALL,
+)
+
+
+def _parse_proposals(text: str) -> list[dict]:
+    """Extract edit proposals from AI response text."""
+    proposals = []
+    for match in PROPOSAL_PATTERN.finditer(text):
+        proposals.append({
+            "title": match.group("title"),
+            "old": match.group("old"),
+            "new": match.group("new"),
+        })
+    return proposals
+
+
+def _clean_response(text: str) -> str:
+    """Remove proposal markup from displayed response text."""
+    return PROPOSAL_PATTERN.sub("", text).strip()
 
 
 class MainScreen(Screen):
@@ -80,6 +106,7 @@ class MainScreen(Screen):
             self.chat_view.add_user_message(text)
             if self._app.context_builder and self._app.ai_client:
                 import asyncio
+
                 asyncio.create_task(self._send_to_ai(text))
 
     def _handle_command(self, cmd_name: str, cmd_args: str, raw_text: str) -> None:
@@ -87,7 +114,7 @@ class MainScreen(Screen):
         try:
             result = self._app._command_registry.execute(cmd_name, cmd_args)
             if result is None:
-                return  # Modal commands handle their own UI (e.g. /help)
+                return
             if isinstance(result, str):
                 self.chat_view.add_user_message(raw_text)
                 self.chat_view.start_assistant_message()
@@ -130,4 +157,66 @@ class MainScreen(Screen):
         self.chat_view.finish_assistant_message()
 
         self._app.context_builder.history.add(Message(role="user", content=text))
-        self._app.context_builder.history.add(Message(role="assistant", content=full_response))
+        self._app.context_builder.history.add(
+            Message(role="assistant", content=full_response)
+        )
+
+        # Parse and mount any edit proposals as DiffView widgets
+        proposals = _parse_proposals(full_response)
+        for prop in proposals:
+            self._mount_proposal(prop["title"], prop["old"], prop["new"])
+
+    def _mount_proposal(
+        self, note_title: str, old_text: str, new_text: str
+    ) -> None:
+        """Mount a DiffView for an edit proposal, wired to actually write changes."""
+        vault = self._app.vault
+        if not vault:
+            return
+
+        note = vault.resolve_wikilink(note_title)
+        if not note:
+            self.chat_view.start_assistant_message()
+            self.chat_view.stream_chunk(
+                f'[red]Cannot apply: note "{note_title}" not found.[/red]'
+            )
+            self.chat_view.finish_assistant_message()
+            return
+
+        def do_accept() -> None:
+            if old_text not in note.content:
+                self.chat_view.start_assistant_message()
+                self.chat_view.stream_chunk(
+                    f'[red]Edit failed: text not found in "{note_title}".[/red]'
+                )
+                self.chat_view.finish_assistant_message()
+                return
+            previous = note.content
+            updated = note.content.replace(old_text, new_text, 1)
+            note.path.write_text(updated)
+            self._app.permissions.audit_trail.record(
+                "write", str(note.path),
+                f"Applied edit to {note_title}",
+                previous_content=previous,
+            )
+            vault.refresh()
+            self.chat_view.start_assistant_message()
+            self.chat_view.stream_chunk(
+                f'✅ Edit applied to "{note_title}".'
+            )
+            self.chat_view.finish_assistant_message()
+
+        def do_reject() -> None:
+            self.chat_view.start_assistant_message()
+            self.chat_view.stream_chunk(
+                f'[dim]Edit to "{note_title}" rejected.[/dim]'
+            )
+            self.chat_view.finish_assistant_message()
+
+        self.chat_view.mount(DiffView(
+            note_title=note_title,
+            old_text=old_text,
+            new_text=new_text,
+            on_accept=do_accept,
+            on_reject=do_reject,
+        ))
