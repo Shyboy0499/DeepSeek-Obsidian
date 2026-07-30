@@ -116,14 +116,11 @@ class DeepSeekTuiApp(App):
         self.ai_client = None
         self.context_builder: ContextBuilder | None = None
         self._cli_vault = cli_vault
+        self._vault_candidates: list[Path] = []
 
     def on_mount(self) -> None:
-        if self._cli_vault:
-            self._load_vault(Path(self._cli_vault).expanduser())
-        elif self.config.vault_path and self.config.vault_path.exists():
-            self._load_vault(self.config.vault_path)
-        else:
-            self._auto_detect_vault()
+        self._command_registry = self._build_command_registry()
+        self.push_screen(MainScreen(self))
 
         if self.ai_client is None:
             self.ai_client = create_client(
@@ -132,18 +129,36 @@ class DeepSeekTuiApp(App):
                 api_key=self.config.api_key,
             )
 
-        if self.vault:
-            self.context_builder = ContextBuilder(
-                self.vault, max_notes=self.config.max_notes
+        self._detect_and_load_vault()
+
+    def _detect_and_load_vault(self) -> None:
+        if self._cli_vault:
+            self._load_vault(Path(self._cli_vault).expanduser())
+            return
+
+        if self.config.vault_path and self.config.vault_path.exists():
+            self._load_vault(self.config.vault_path)
+            return
+
+        candidates = self._find_vaults()
+        if len(candidates) == 0:
+            self._notify_chat(
+                "No Obsidian vault found.\n"
+                "Use /vault <path> to open one, or restart with --vault PATH."
             )
+        elif len(candidates) == 1:
+            self._load_vault(candidates[0])
+        else:
+            lines = [
+                f"Found {len(candidates)} vaults. "
+                "Use /vault with a number to pick one:"
+            ]
+            for i, path in enumerate(candidates, 1):
+                self._vault_candidates = candidates
+                lines.append(f"  [{i}] {path}")
+            self._notify_chat("\n".join(lines))
 
-        self.push_screen(MainScreen(self))
-        self._command_registry = self._build_command_registry()
-
-    def _load_vault(self, path: Path) -> None:
-        self.vault = VaultReader(path, exclude_dirs=self.config.exclude_dirs)
-
-    def _auto_detect_vault(self) -> None:
+    def _find_vaults(self) -> list[Path]:
         search_paths = [
             Path.home() / "Documents",
             Path.home() / "Obsidian",
@@ -156,11 +171,24 @@ class DeepSeekTuiApp(App):
                     vault_path = obsidian_dir.parent
                     if vault_path not in candidates:
                         candidates.append(vault_path)
+        return candidates
 
-        if len(candidates) == 1:
-            self._load_vault(candidates[0])
-        elif len(candidates) > 1:
-            self._load_vault(candidates[0])
+    def _notify_chat(self, message: str) -> None:
+        screen = self.screen
+        if isinstance(screen, MainScreen):
+            screen.chat_view.start_assistant_message()
+            screen.chat_view.stream_chunk(f"⚙️ {message}")
+            screen.chat_view.finish_assistant_message()
+
+    def _load_vault(self, path: Path) -> None:
+        self.vault = VaultReader(path, exclude_dirs=self.config.exclude_dirs)
+        if self.vault:
+            self.context_builder = ContextBuilder(
+                self.vault, max_notes=self.config.max_notes
+            )
+        self._notify_chat(
+            f"Loaded vault: {path.name} ({len(self.vault.notes)} notes)"
+        )
 
     def action_cycle_permission(self) -> None:
         new_level = self.permissions.cycle()
@@ -325,14 +353,27 @@ class DeepSeekTuiApp(App):
         return f"Note not found: \"{from_note}\" — check the title with /search"
 
     def _cmd_vault(self, args: str) -> str:
-        path = Path(args.strip()).expanduser()
+        arg = args.strip()
+        # Try numeric index into candidates list
+        if arg.isdigit() and self._vault_candidates:
+            idx = int(arg) - 1
+            if 0 <= idx < len(self._vault_candidates):
+                path = self._vault_candidates[idx]
+                self._load_vault(path)
+                self._vault_candidates = []
+                screen = self.screen
+                if isinstance(screen, MainScreen):
+                    screen._update_header()
+                return f"Switched to vault: {path.name}"
+            return f"Invalid vault number. Choose 1-{len(self._vault_candidates)}."
+
+        path = Path(arg).expanduser()
         if path.exists() and (path / ".obsidian").exists():
             self._load_vault(path)
+            self._vault_candidates = []
             screen = self.screen
             if isinstance(screen, MainScreen):
                 screen._update_header()
-            if self.vault:
-                self.context_builder = ContextBuilder(self.vault, max_notes=self.config.max_notes)
             return f"Switched to vault: {path.name}"
         return f"Not a valid Obsidian vault (no .obsidian/ folder): {path}"
 
