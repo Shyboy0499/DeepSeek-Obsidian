@@ -256,7 +256,7 @@ class DeepSeekTuiApp(App):
 
     def _cmd_search(self, args: str) -> str:
         if not self.vault or not args:
-            return "No vault loaded or no query provided."
+            return "No vault loaded. Use /vault <path> to open one, or restart with --vault PATH."
         results = self.vault.search_full_text(args)
         screen = self.screen
         if isinstance(screen, MainScreen):
@@ -266,7 +266,7 @@ class DeepSeekTuiApp(App):
 
     def _cmd_open(self, args: str) -> str:
         if not self.vault or not args:
-            return "No vault loaded or no note specified."
+            return "No vault loaded. Use /vault <path> to open a vault first."
         link = args.strip().strip("[[").strip("]]")
         note = self.vault.resolve_wikilink(link)
         if note:
@@ -274,13 +274,13 @@ class DeepSeekTuiApp(App):
             if isinstance(screen, MainScreen):
                 screen.sidebar.notes_panel.set_notes([(note.title, str(note.path))])
             return f"Opened: {note.title}"
-        return f"Note not found: {link}"
+        return f"Note not found: \"{link}\" — use /search to find notes by keyword"
 
     def _cmd_save(self, args: str) -> str:
         if not self.vault:
-            return "No vault loaded."
+            return "No vault loaded. Use /vault <path> to open one."
         if not self.permissions.can_write():
-            return "Cannot save: permission level is Ask. Switch to Full Access."
+            return "Cannot save: permission is 'Ask' (read-only). Press Tab to cycle to Full Access, or use /perm full."
         screen = self.screen
         if isinstance(screen, MainScreen):
             chat_view = screen.chat_view
@@ -291,9 +291,9 @@ class DeepSeekTuiApp(App):
                     content = child.text
                     break
             else:
-                return "No AI response to save."
+                return "No AI response to save. Send a message to the AI first."
         else:
-            return "No AI response to save."
+            return "No AI response to save. Send a message to the AI first."
         filename = args.strip() if args.strip() else "untitled.md"
         filepath = self.vault.vault_path / filename
         filepath.write_text(str(content))
@@ -302,7 +302,7 @@ class DeepSeekTuiApp(App):
 
     def _cmd_link(self, args: str) -> str:
         if not self.vault:
-            return "No vault loaded."
+            return "No vault loaded. Use /vault <path> to open one."
         if "->" not in args:
             return "Usage: /link <from> -> <to>"
         from_note, to_note = args.split("->", 1)
@@ -319,7 +319,7 @@ class DeepSeekTuiApp(App):
                 f"Added link to [[{to_note}]]",
             )
             return f"Linked [[{from_note}]] -> [[{to_note}]]"
-        return f"Note not found: {from_note}"
+        return f"Note not found: \"{from_note}\" — check the title with /search"
 
     def _cmd_vault(self, args: str) -> str:
         path = Path(args.strip()).expanduser()
@@ -331,7 +331,7 @@ class DeepSeekTuiApp(App):
             if self.vault:
                 self.context_builder = ContextBuilder(self.vault, max_notes=self.config.max_notes)
             return f"Switched to vault: {path.name}"
-        return f"Not a valid Obsidian vault: {path}"
+        return f"Not a valid Obsidian vault (no .obsidian/ folder): {path}"
 
     def _cmd_export(self, args: str) -> str:
         path = (
@@ -347,7 +347,7 @@ class DeepSeekTuiApp(App):
                     lines.append(f"## {child.role}\n\n{child.text}\n")
             path.write_text("\n---\n".join(lines))
             return f"Chat exported to {path}"
-        return "Nothing to export."
+        return "Nothing to export. Chat with the AI first, then use /export."
 
     def _cmd_clear(self, args: str) -> str:
         screen = self.screen
@@ -377,7 +377,7 @@ class DeepSeekTuiApp(App):
                 screen.update_posture(level.value)
             return f"Permission set to: {level.value}"
         except ValueError:
-            return "Usage: /perm ask|review|full"
+            return "Usage: /perm ask|review|full  (or press Tab to cycle)"
 
     def _cmd_help(self, args: str) -> str:
         lines = ["Available commands:", ""]
