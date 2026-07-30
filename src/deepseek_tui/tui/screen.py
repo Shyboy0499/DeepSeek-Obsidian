@@ -113,15 +113,24 @@ class MainScreen(Screen):
         self.sidebar.notes_panel.set_notes(notes_data)
 
         self.chat_view.start_assistant_message()
+        self.chat_view.stream_chunk("[dim]🤔 Thinking...[/dim]")
+        first_chunk = True
         full_response = ""
         try:
             async for chunk in self._app.ai_client.stream(messages):
                 if chunk.content:
+                    if first_chunk:
+                        self.chat_view._current_assistant_message.text = ""
+                        self.chat_view._current_assistant_message._refresh()
+                        first_chunk = False
                     full_response += chunk.content
                     self.chat_view.stream_chunk(chunk.content)
         except Exception as e:
-            error_msg = f"\n\n[red]Error: {e}[/red]"
-            full_response += error_msg
+            if first_chunk:
+                self.chat_view._current_assistant_message.text = ""
+                first_chunk = False
+            error_msg = f"[red]Error: {e}[/red]"
+            full_response = error_msg
             self.chat_view.stream_chunk(error_msg)
         self.chat_view.finish_assistant_message()
 
