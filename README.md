@@ -24,7 +24,7 @@ pip install deepseek-tui
 
 # Homebrew (macOS)
 brew tap Shyboy0499/deepseek-tui
-brew install deepseek-tui
+brew install shyboy0499/deekseek-tui/deepseek-tui
 ```
 
 ## Quick Start
