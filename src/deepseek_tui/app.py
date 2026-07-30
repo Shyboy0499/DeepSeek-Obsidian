@@ -7,7 +7,7 @@ from pathlib import Path
 from textual.app import App
 
 from deepseek_tui.config.loader import load_config
-from deepseek_tui.engine.ai_client import create_client
+from deepseek_tui.engine.ai_client import AIClient, create_client
 from deepseek_tui.engine.context import ContextBuilder
 from deepseek_tui.engine.permissions import PermissionLevel, Permissions
 from deepseek_tui.engine.vault import VaultReader
@@ -114,7 +114,7 @@ class DeepSeekTuiApp(App):
             level=PermissionLevel.from_string(self.config.permission_default)
         )
         self.vault: VaultReader | None = None
-        self.ai_client = None
+        self.ai_client: AIClient | None = None
         self.context_builder: ContextBuilder | None = None
         self._cli_vault = cli_vault
         self._vault_candidates: list[Path] = []
