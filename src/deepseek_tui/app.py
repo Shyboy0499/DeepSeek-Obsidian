@@ -34,13 +34,12 @@ class DeepSeekTuiApp(App):
 
     #sidebar-column {
         width: 35;
-        border-left: solid $primary;
+        border-left: solid;
     }
 
     Header {
         dock: top;
         height: 1;
-        background: $panel;
         padding: 0 1;
     }
 
@@ -51,7 +50,7 @@ class DeepSeekTuiApp(App):
     #header-posture {
         width: auto;
         padding: 0 1;
-        background: $accent;
+        text-style: bold reverse;
     }
 
     #header-vault {
@@ -62,7 +61,6 @@ class DeepSeekTuiApp(App):
     InputBar {
         dock: bottom;
         height: auto;
-        background: $panel;
         padding: 0 1;
     }
 
@@ -84,7 +82,7 @@ class DeepSeekTuiApp(App):
 
     ReferencedNotesPanel {
         height: 1fr;
-        border-bottom: solid $primary;
+        border-bottom: solid;
     }
 
     SearchPanel {
@@ -92,8 +90,8 @@ class DeepSeekTuiApp(App):
     }
 
     .panel-title {
-        background: $boost;
         padding: 0 1;
+        text-style: bold;
     }
     """
 
