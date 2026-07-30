@@ -160,18 +160,24 @@ class DeepSeekTuiApp(App):
             self._notify_chat("\n".join(lines))
 
     def _find_vaults(self) -> list[Path]:
-        search_paths = [
+        search_dirs = [
             Path.home() / "Documents",
             Path.home() / "Obsidian",
-            Path.home(),
+            Path.home() / "Desktop",
         ]
         candidates: list[Path] = []
-        for search_path in search_paths:
-            if search_path.exists():
-                for obsidian_dir in search_path.rglob(".obsidian"):
-                    vault_path = obsidian_dir.parent
-                    if vault_path not in candidates:
-                        candidates.append(vault_path)
+        for search_dir in search_dirs:
+            if not search_dir.exists():
+                continue
+            # Direct child — most vaults are one level deep
+            for child in search_dir.iterdir():
+                if child.is_dir() and (child / ".obsidian").exists():
+                    if child not in candidates:
+                        candidates.append(child)
+            # Also check search_dir itself
+            if (search_dir / ".obsidian").exists():
+                if search_dir not in candidates:
+                    candidates.append(search_dir)
         return candidates
 
     def _notify_chat(self, message: str) -> None:
@@ -450,7 +456,10 @@ class DeepSeekTuiApp(App):
 
     def _cmd_theme(self, args: str) -> str:
         theme = args.strip()
-        available = ["dracula", "nord", "catppuccin", "monokai"]
+        available = ["terminal", "dracula", "nord", "catppuccin", "monokai"]
+        if theme == "terminal":
+            self.theme = "textual-dark"
+            return "Theme: terminal-native colors."
         if theme in available:
             self.theme = theme
             return f"Theme changed to {theme}."

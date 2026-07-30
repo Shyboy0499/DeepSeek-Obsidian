@@ -18,7 +18,7 @@ DEFAULTS: dict[str, dict[str, Any]] = {
         "incremental_index": True,
     },
     "tui": {
-        "theme": "dracula",
+        "theme": "",  # empty = terminal-native colors
         "permission_default": "ask",
         "sidebar_width": 35,
     },
