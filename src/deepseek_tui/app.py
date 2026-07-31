@@ -34,7 +34,6 @@ class DeepSeekTuiApp(App):
 
     #sidebar-column {
         width: 35;
-        border-left: solid;
     }
 
     Header {
@@ -50,7 +49,7 @@ class DeepSeekTuiApp(App):
     #header-posture {
         width: auto;
         padding: 0 1;
-        text-style: bold reverse;
+        text-style: bold;
     }
 
     #header-vault {
@@ -82,7 +81,6 @@ class DeepSeekTuiApp(App):
 
     ReferencedNotesPanel {
         height: 1fr;
-        border-bottom: solid;
     }
 
     SearchPanel {
