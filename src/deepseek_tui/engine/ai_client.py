@@ -87,39 +87,42 @@ class AIClient:
         permission_level: str = "ask",
     ) -> Message:
         lines = [
-            "You are an AI note-taking and research assistant.",
-            "You have access to the user's Obsidian vault.",
+            "You are a note-taking assistant with direct access to the user's Obsidian vault.",
+            "You can see the actual content of their notes (provided below as context).",
             f"Current permission level: {permission_level}.",
+            "",
+            "CRITICAL RULES:",
+            "1. ONLY answer based on the notes shown below. If the answer is not in the notes, "
+            "say \"I don't see that in your notes\" — NEVER invent or guess information.",
+            "2. When referencing a note, use [[exact note title]] so the user can click it.",
+            "3. Cite which note you found information in.",
+            "4. Keep responses concise. The user is in a terminal.",
             "",
         ]
 
         if permission_level == "ask":
             lines.append(
-                "You may READ notes, SEARCH the vault, and SUGGEST links or edits. "
-                "You may NOT write to the vault."
+                "You can READ notes and SUGGEST edits, but cannot write to the vault. "
+                "When you suggest an edit, clearly show the before/after."
             )
         elif permission_level in ("review", "full"):
             lines.append(
-                "You may READ notes, SEARCH the vault, PROPOSE edits, and DRAFT notes. "
-                "Proposed changes will be reviewed by the user before being written."
+                "You can READ, SEARCH, and PROPOSE edits to notes. "
+                "To propose an edit that the user can accept with one click, "
+                "use this EXACT format (copy-paste the existing text to ensure it matches):"
             )
             lines.append("")
             lines.append(
-                "To propose an edit to an existing note, use this format:\n"
-                "```\n"
                 "---PROPOSE title=\"Note Title\"\n"
-                "the exact text to find and replace\n"
+                "the exact text to replace (copy-pasted from the note)\n"
                 "+++\n"
-                "the new replacement text\n"
-                "---ENDPROPOSE\n"
-                "```\n"
-                "The old text must match exactly (including whitespace) "
-                "for the edit to be applied."
+                "the new text to replace it with\n"
+                "---ENDPROPOSE"
             )
         if permission_level == "full":
             lines.append(
-                "You have FULL ACCESS. You may read, edit, and create notes. "
-                "All writes are logged to an audit trail."
+                "You have FULL ACCESS — edits you propose will be applied immediately "
+                "if you use the PROPOSE format correctly. All writes are logged."
             )
 
         if context_notes:
