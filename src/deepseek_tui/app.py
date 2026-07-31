@@ -189,9 +189,20 @@ class DeepSeekTuiApp(App):
             self.context_builder = ContextBuilder(
                 self.vault, max_notes=self.config.max_notes
             )
-        self._notify_chat(
-            f"Loaded vault: {path.name} ({len(self.vault.notes)} notes)"
+        note_count = len(self.vault.notes)
+        lines = [
+            f"📁 Vault connected: {path.name} ({note_count} notes)",
+        ]
+        if not self.config.api_key:
+            provider = self.config.provider.upper()
+            lines.append(
+                f"⚠️  No {provider}_API_KEY set — AI chat won't work. "
+                f"Export your key and restart."
+            )
+        lines.append(
+            "Try /search to find notes, /help for all commands."
         )
+        self._notify_chat("\n".join(lines))
 
     def action_cycle_permission(self) -> None:
         new_level = self.permissions.cycle()

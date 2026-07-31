@@ -128,9 +128,20 @@ class MainScreen(Screen):
 
     async def _send_to_ai(self, text: str) -> None:
         """Send user message to AI and stream the response."""
-        if not self._app.context_builder or not self._app.ai_client:
+        if not self._app.vault:
             self.chat_view.start_assistant_message()
-            self.chat_view.stream_chunk("No vault or AI client configured.")
+            self.chat_view.stream_chunk(
+                "No vault loaded. Use /vault <path> to open one."
+            )
+            self.chat_view.finish_assistant_message()
+            return
+
+        if not self._app.config.api_key:
+            self.chat_view.start_assistant_message()
+            prov = self._app.config.provider.upper()
+            self.chat_view.stream_chunk(
+                f"No {prov}_API_KEY set. Export your key and restart deepseek-tui."
+            )
             self.chat_view.finish_assistant_message()
             return
 
