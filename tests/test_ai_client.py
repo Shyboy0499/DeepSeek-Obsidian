@@ -45,7 +45,7 @@ class TestAIProvider:
 
     def test_default_model_for_each_provider(self):
         models = {
-            AIProvider.DEEPSEEK: "deepseek-chat",
+            AIProvider.DEEPSEEK: "deepseek-reasoner",
             AIProvider.ANTHROPIC: "claude-sonnet-4-6",
             AIProvider.OPENAI: "gpt-4o",
             AIProvider.OLLAMA: "llama3",

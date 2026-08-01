@@ -156,9 +156,18 @@ class MainScreen(Screen):
         self.chat_view.start_assistant_message()
         self.chat_view.stream_chunk("[dim]🤔 Thinking...[/dim]\n")
         full_response = ""
+        reasoning_shown = False
         try:
             async for chunk in self._app.ai_client.stream(messages):
+                if chunk.reasoning:
+                    if not reasoning_shown:
+                        self.chat_view.stream_chunk("[dim]")
+                        reasoning_shown = True
+                    self.chat_view.stream_chunk(chunk.reasoning)
                 if chunk.content:
+                    if reasoning_shown:
+                        self.chat_view.stream_chunk("[/dim]\n")
+                        reasoning_shown = False
                     full_response += chunk.content
                     self.chat_view.stream_chunk(chunk.content)
         except Exception as e:

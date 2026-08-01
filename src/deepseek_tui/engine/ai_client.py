@@ -16,7 +16,7 @@ class AIProvider(Enum):
     base_url: str
     default_model: str
 
-    DEEPSEEK = ("deepseek", "https://api.deepseek.com/v1", "deepseek-chat")
+    DEEPSEEK = ("deepseek", "https://api.deepseek.com/v1", "deepseek-reasoner")
     ANTHROPIC = ("anthropic", "https://api.anthropic.com/v1", "claude-sonnet-4-6")
     OPENAI = ("openai", "https://api.openai.com/v1", "gpt-4o")
     OLLAMA = ("ollama", "http://localhost:11434/v1", "llama3")
@@ -38,7 +38,7 @@ class AIProvider(Enum):
     @classmethod
     def known_models(cls) -> dict[str, list[str]]:
         return {
-            "deepseek": ["deepseek-chat", "deepseek-reasoner"],
+            "deepseek": ["deepseek-reasoner", "deepseek-chat"],
             "anthropic": ["claude-sonnet-4-6", "claude-opus-4-8", "claude-haiku-4-5"],
             "openai": ["gpt-4o", "gpt-4o-mini"],
             "ollama": ["llama3", "mistral", "codellama", "phi3"],
@@ -57,6 +57,7 @@ class Message:
 @dataclass
 class StreamChunk:
     content: str
+    reasoning: str = ""  # Chain-of-thought from reasoning models
     is_done: bool = False
 
 
@@ -162,8 +163,12 @@ class AIClient:
                             chunk = json.loads(data)
                             delta = chunk.get("choices", [{}])[0].get("delta", {})
                             content = delta.get("content", "")
-                            if content:
-                                yield StreamChunk(content=content)
+                            reasoning = delta.get("reasoning_content", "")
+                            if content or reasoning:
+                                yield StreamChunk(
+                                    content=content,
+                                    reasoning=reasoning,
+                                )
                         except (json.JSONDecodeError, KeyError, IndexError):
                             continue
 
