@@ -99,5 +99,5 @@ class TestAIClient:
             context_notes=[note] if note else [],
             permission_level="ask",
         )
-        assert "Obsidian vault" in prompt.content
+        assert "vault" in prompt.content.lower()
         assert "Machine Learning Basics" in prompt.content

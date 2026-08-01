@@ -78,6 +78,10 @@ class ContextBuilder:
                 seen.add(note.path)
         context_notes = context_notes[:self.max_notes]
 
+        # Fallback: always include a note index so the AI can navigate
+        if not context_notes:
+            context_notes = self.vault.notes[:self.max_notes]
+
         # Build system prompt
         client = AIClient(AIProvider.DEEPSEEK, "deepseek-chat")
         system_msg = client.build_system_prompt(context_notes, permission_level)
