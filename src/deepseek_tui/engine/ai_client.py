@@ -38,7 +38,10 @@ class AIProvider(Enum):
     @classmethod
     def known_models(cls) -> dict[str, list[str]]:
         return {
-            "deepseek": ["deepseek-reasoner", "deepseek-chat"],
+            "deepseek": [
+                "deepseek-chat", "deepseek-reasoner",
+                "deepseek-v4-flash", "deepseek-v4-pro",
+            ],
             "anthropic": ["claude-sonnet-4-6", "claude-opus-4-8", "claude-haiku-4-5"],
             "openai": ["gpt-4o", "gpt-4o-mini"],
             "ollama": ["llama3", "mistral", "codellama", "phi3"],
