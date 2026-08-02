@@ -145,9 +145,11 @@ class MainScreen(Screen):
             self.chat_view.finish_assistant_message()
             return
 
+        model = self._app.ai_client.model if self._app.ai_client else ""
         messages, context_notes = self._app.context_builder.build(
             text,
             permission_level=self._app.permissions.level.value,
+            model=model,
         )
 
         notes_data = [(n.title, str(n.path)) for n in context_notes]

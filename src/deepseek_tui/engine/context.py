@@ -59,8 +59,14 @@ class ContextBuilder:
         self,
         query: str,
         permission_level: str = "ask",
+        model: str = "",
     ) -> tuple[list[Message], list[Note]]:
         """Build the full message list for an AI request.
+
+        Args:
+            query: The user's message.
+            permission_level: Current permission posture.
+            model: Model name (used in system prompt context).
 
         Returns:
             Tuple of (messages, context_notes).
@@ -82,8 +88,8 @@ class ContextBuilder:
         if not context_notes:
             context_notes = self.vault.notes[:self.max_notes]
 
-        # Build system prompt
-        client = AIClient(AIProvider.DEEPSEEK, "deepseek-chat")
+        # Build system prompt (model-agnostic, just builds text)
+        client = AIClient(AIProvider.DEEPSEEK, model or "deepseek-reasoner")
         system_msg = client.build_system_prompt(context_notes, permission_level)
 
         # Assemble full message list
