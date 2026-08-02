@@ -71,6 +71,7 @@ class AIClient:
         self.provider = provider
         self.model = model
         self.api_key = api_key
+        self.last_actual_model: str = ""  # What the API actually ran
 
     def _headers(self) -> dict[str, str]:
         headers = {"Content-Type": "application/json"}
@@ -161,6 +162,8 @@ class AIClient:
                             return
                         try:
                             chunk = json.loads(data)
+                            if not self.last_actual_model:
+                                self.last_actual_model = chunk.get("model", "")
                             delta = chunk.get("choices", [{}])[0].get("delta", {})
                             content = delta.get("content", "")
                             reasoning = delta.get("reasoning_content", "")
