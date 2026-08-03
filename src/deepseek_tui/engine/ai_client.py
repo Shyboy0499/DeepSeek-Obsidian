@@ -16,7 +16,7 @@ class AIProvider(Enum):
     base_url: str
     default_model: str
 
-    DEEPSEEK = ("deepseek", "https://api.deepseek.com/v1", "deepseek-chat")
+    DEEPSEEK = ("deepseek", "https://api.deepseek.com/v1", "deepseek-v4-flash")
     ANTHROPIC = ("anthropic", "https://api.anthropic.com/v1", "claude-sonnet-4-6")
     OPENAI = ("openai", "https://api.openai.com/v1", "gpt-4o")
     OLLAMA = ("ollama", "http://localhost:11434/v1", "llama3")
@@ -38,10 +38,7 @@ class AIProvider(Enum):
     @classmethod
     def known_models(cls) -> dict[str, list[str]]:
         return {
-            "deepseek": [
-                "deepseek-chat", "deepseek-reasoner",
-                "deepseek-v4-flash", "deepseek-v4-pro",
-            ],
+            "deepseek": ["deepseek-v4-flash", "deepseek-v4-pro"],
             "anthropic": ["claude-sonnet-4-6", "claude-opus-4-8", "claude-haiku-4-5"],
             "openai": ["gpt-4o", "gpt-4o-mini"],
             "ollama": ["llama3", "mistral", "codellama", "phi3"],
