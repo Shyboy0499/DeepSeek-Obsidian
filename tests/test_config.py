@@ -14,7 +14,7 @@ class TestDefaults:
 
     def test_default_provider_is_deepseek(self):
         assert DEFAULTS["model"]["provider"] == "deepseek"
-        assert DEFAULTS["model"]["model"] == "deepseek-chat"
+        assert DEFAULTS["model"]["model"] == "deepseek-v4-flash"
 
     def test_default_permission_is_ask(self):
         assert DEFAULTS["tui"]["permission_default"] == "ask"
@@ -28,7 +28,7 @@ class TestLoadConfig:
         config = load_config(config_path=Path("/nonexistent/path/config.toml"))
         assert config.vault_path is None
         assert config.provider == "deepseek"
-        assert config.model == "deepseek-chat"
+        assert config.model == "deepseek-v4-flash"
 
     def test_merges_config_file_over_defaults(self):
         with tempfile.NamedTemporaryFile(mode="w", suffix=".toml", delete=False) as f:

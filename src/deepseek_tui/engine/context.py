@@ -89,7 +89,7 @@ class ContextBuilder:
             context_notes = self.vault.notes[:self.max_notes]
 
         # Build system prompt (model-agnostic, just builds text)
-        client = AIClient(AIProvider.DEEPSEEK, model or "deepseek-reasoner")
+        client = AIClient(AIProvider.DEEPSEEK, model or "deepseek-v4-flash")
         system_msg = client.build_system_prompt(context_notes, permission_level)
 
         # Assemble full message list
