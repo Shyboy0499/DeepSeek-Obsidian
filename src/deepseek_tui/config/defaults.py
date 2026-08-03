@@ -9,7 +9,7 @@ DEFAULTS: dict[str, dict[str, Any]] = {
     },
     "model": {
         "provider": "deepseek",
-        "model": "deepseek-reasoner",
+        "model": "deepseek-chat",
     },
     "context": {
         "max_notes": 10,

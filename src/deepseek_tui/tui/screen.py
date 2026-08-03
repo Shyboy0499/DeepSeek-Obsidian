@@ -193,6 +193,16 @@ class MainScreen(Screen):
             self.chat_view.stream_chunk(f"\n{error_msg}")
         self.chat_view.finish_assistant_message()
 
+        # Show actual model the API ran (may differ from requested)
+        actual = self._app.ai_client.last_actual_model if self._app.ai_client else ""
+        if actual and actual != self._app.config.model:
+            self.chat_view.start_assistant_message()
+            self.chat_view.stream_chunk(
+                f"[dim]⚙️ Requested {self._app.config.model}, "
+                f"API ran {actual}[/dim]"
+            )
+            self.chat_view.finish_assistant_message()
+
         self._app.context_builder.history.add(Message(role="user", content=text))
         self._app.context_builder.history.add(
             Message(role="assistant", content=full_response)

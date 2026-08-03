@@ -327,7 +327,10 @@ class DeepSeekTuiApp(App):
             )
             self.config.provider = provider_name
             self.config.model = chosen_model
-            return f"Switched to {provider_name}/{chosen_model}"
+            return (
+                f"Requested: {provider_name}/{chosen_model}\n"
+                "Actual model confirmed on next message."
+            )
         except ValueError:
             return (
                 f"Unknown provider: {provider_name}. "
