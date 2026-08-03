@@ -2,7 +2,7 @@
 
 import pytest
 
-from deepseek_tui.tui.commands import (
+from deepseek_obsidian.tui.commands import (
     Command,
     CommandRegistry,
     parse_command,

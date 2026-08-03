@@ -8,9 +8,9 @@ from dataclasses import dataclass
 from pathlib import Path
 from typing import Any
 
-from deepseek_tui.config.defaults import DEFAULTS
+from deepseek_obsidian.config.defaults import DEFAULTS
 
-CONFIG_DIR = Path.home() / ".config" / "deepseek-tui"
+CONFIG_DIR = Path.home() / ".config" / "deepseek-obsidian"
 CONFIG_PATH = CONFIG_DIR / "config.toml"
 
 

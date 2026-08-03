@@ -4,8 +4,8 @@ from __future__ import annotations
 
 import re
 
-from deepseek_tui.engine.ai_client import AIClient, AIProvider, Message
-from deepseek_tui.engine.vault import Note, VaultReader
+from deepseek_obsidian.engine.ai_client import AIClient, AIProvider, Message
+from deepseek_obsidian.engine.vault import Note, VaultReader
 
 WIKILINK_IN_QUERY = re.compile(r"\[\[([^\]]+)\]\]")
 

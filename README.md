@@ -1,4 +1,4 @@
-# DeepSeek-Tui
+# DeepSeek-Obsidian
 
 An AI-native note-taking and research assistant for the terminal, with deep [Obsidian](https://obsidian.md) vault integration.
 
@@ -20,11 +20,11 @@ Built with **Python + Textual**.
 
 ```bash
 # pip
-pip install deepseek-tui
+pip install deepseek-obsidian
 
 # Homebrew (macOS)
-brew tap Shyboy0499/deepseek-tui
-brew install shyboy0499/deekseek-tui/deepseek-tui
+brew tap Shyboy0499/deepseek-obsidian
+brew install shyboy0499/deekseek-tui/deepseek-obsidian
 ```
 
 ## Quick Start
@@ -34,10 +34,10 @@ brew install shyboy0499/deekseek-tui/deepseek-tui
 export DEEPSEEK_API_KEY="sk-..."
 
 # Launch — auto-detects your Obsidian vault
-deepseek-tui
+deepseek-obsidian
 
 # Or specify a vault directly
-deepseek-tui --vault ~/Documents/MyVault
+deepseek-obsidian --vault ~/Documents/MyVault
 ```
 
 ## Keybindings
@@ -71,7 +71,7 @@ deepseek-tui --vault ~/Documents/MyVault
 
 ## Configuration
 
-On first launch, DeepSeek-Tui auto-detects your Obsidian vault. If multiple vaults are found, you'll be prompted to pick one. Config is stored at `~/.config/deepseek-tui/config.toml`.
+On first launch, DeepSeek-Obsidian auto-detects your Obsidian vault. If multiple vaults are found, you'll be prompted to pick one. Config is stored at `~/.config/deepseek-obsidian/config.toml`.
 
 ```toml
 [vault]
@@ -109,6 +109,6 @@ API keys are read from environment variables — never stored in config:
 
 ## Design
 
-See [docs/superpowers/specs/2026-07-30-deepseek-tui-design.md](docs/superpowers/specs/2026-07-30-deepseek-tui-design.md) for the full design specification.
+See [docs/superpowers/specs/2026-07-30-deepseek-obsidian-design.md](docs/superpowers/specs/2026-07-30-deepseek-obsidian-design.md) for the full design specification.
 
-See [docs/superpowers/plans/2026-07-30-deepseek-tui-implementation.md](docs/superpowers/plans/2026-07-30-deepseek-tui-implementation.md) for the implementation plan.
+See [docs/superpowers/plans/2026-07-30-deepseek-obsidian-implementation.md](docs/superpowers/plans/2026-07-30-deepseek-obsidian-implementation.md) for the implementation plan.

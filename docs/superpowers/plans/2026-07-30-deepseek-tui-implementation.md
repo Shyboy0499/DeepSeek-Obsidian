@@ -1,4 +1,4 @@
-# DeepSeek-Tui Implementation Plan
+# DeepSeek-Obsidian Implementation Plan
 
 > **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
 
@@ -14,8 +14,8 @@
 
 **Files:**
 - Create: `pyproject.toml`
-- Create: `src/deepseek_tui/__init__.py`
-- Create: `src/deepseek_tui/__main__.py`
+- Create: `src/deepseek_obsidian/__init__.py`
+- Create: `src/deepseek_obsidian/__main__.py`
 - Create: `tests/__init__.py`
 - Create: `.gitignore`
 
@@ -27,7 +27,7 @@ requires = ["hatchling"]
 build-backend = "hatchling.build"
 
 [project]
-name = "deepseek-tui"
+name = "deepseek-obsidian"
 version = "0.1.0"
 description = "AI-native note-taking and research assistant for the terminal with Obsidian integration"
 readme = "README.md"
@@ -50,7 +50,7 @@ dev = [
 ]
 
 [project.scripts]
-deepseek-tui = "deepseek_tui.app:main"
+deepseek-obsidian = "deepseek_obsidian.app:main"
 
 [tool.ruff]
 target-version = "py312"
@@ -71,7 +71,7 @@ strict = true
 - [ ] **Step 2: Write `__init__.py`**
 
 ```python
-"""DeepSeek-Tui: AI-native note-taking and research assistant for the terminal."""
+"""DeepSeek-Obsidian: AI-native note-taking and research assistant for the terminal."""
 
 __version__ = "0.1.0"
 ```
@@ -79,9 +79,9 @@ __version__ = "0.1.0"
 - [ ] **Step 3: Write `__main__.py`**
 
 ```python
-"""Allow running as `python -m deepseek_tui`."""
+"""Allow running as `python -m deepseek_obsidian`."""
 
-from deepseek_tui.app import main
+from deepseek_obsidian.app import main
 
 if __name__ == "__main__":
     main()
@@ -110,9 +110,9 @@ venv/
 - [ ] **Step 6: Create virtualenv, install, and verify CLI entrypoint exists**
 
 ```bash
-python3 -m venv .venv && source .venv/bin/activate && pip install -e ".[dev]" && deepseek-tui --help 2>&1 || true
+python3 -m venv .venv && source .venv/bin/activate && pip install -e ".[dev]" && deepseek-obsidian --help 2>&1 || true
 ```
-Expected: fails with ModuleNotFoundError for `deepseek_tui.app` (app.py not written yet — expected at this stage)
+Expected: fails with ModuleNotFoundError for `deepseek_obsidian.app` (app.py not written yet — expected at this stage)
 
 - [ ] **Step 7: Verify test infrastructure works**
 
@@ -124,7 +124,7 @@ Expected: "no tests ran" (or 0 collected) — pytest itself works
 - [ ] **Step 8: Commit and push**
 
 ```bash
-git add pyproject.toml src/deepseek_tui/__init__.py src/deepseek_tui/__main__.py tests/__init__.py .gitignore
+git add pyproject.toml src/deepseek_obsidian/__init__.py src/deepseek_obsidian/__main__.py tests/__init__.py .gitignore
 git commit -m "chore: scaffold project with pyproject.toml and dev tooling"
 git push origin main
 ```
@@ -134,9 +134,9 @@ git push origin main
 ### Task 2: Config System
 
 **Files:**
-- Create: `src/deepseek_tui/config/__init__.py`
-- Create: `src/deepseek_tui/config/defaults.py`
-- Create: `src/deepseek_tui/config/loader.py`
+- Create: `src/deepseek_obsidian/config/__init__.py`
+- Create: `src/deepseek_obsidian/config/defaults.py`
+- Create: `src/deepseek_obsidian/config/loader.py`
 - Create: `tests/test_config.py`
 
 - [ ] **Step 1: Write the failing test**
@@ -147,8 +147,8 @@ git push origin main
 import os
 import tempfile
 from pathlib import Path
-from deepseek_tui.config.loader import load_config, Config
-from deepseek_tui.config.defaults import DEFAULTS
+from deepseek_obsidian.config.loader import load_config, Config
+from deepseek_obsidian.config.defaults import DEFAULTS
 
 
 class TestDefaults:
@@ -274,7 +274,7 @@ from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Any
 
-from deepseek_tui.config.defaults import DEFAULTS
+from deepseek_obsidian.config.defaults import DEFAULTS
 
 if sys.version_info >= (3, 11):
     import tomllib
@@ -282,7 +282,7 @@ else:
     import tomli as tomllib  # type: ignore
 
 
-CONFIG_DIR = Path.home() / ".config" / "deepseek-tui"
+CONFIG_DIR = Path.home() / ".config" / "deepseek-obsidian"
 CONFIG_PATH = CONFIG_DIR / "config.toml"
 
 
@@ -361,7 +361,7 @@ def load_config(config_path: Path | None = None) -> Config:
 ```python
 """Configuration subsystem."""
 
-from deepseek_tui.config.loader import Config, load_config
+from deepseek_obsidian.config.loader import Config, load_config
 
 __all__ = ["Config", "load_config"]
 ```
@@ -374,7 +374,7 @@ Expected: all 6 tests PASS
 - [ ] **Step 7: Commit and push**
 
 ```bash
-git add src/deepseek_tui/config/ tests/test_config.py
+git add src/deepseek_obsidian/config/ tests/test_config.py
 git commit -m "feat: add config system with TOML loading and env var support"
 git push origin main
 ```
@@ -384,8 +384,8 @@ git push origin main
 ### Task 3: Vault Reader
 
 **Files:**
-- Create: `src/deepseek_tui/engine/__init__.py`
-- Create: `src/deepseek_tui/engine/vault.py`
+- Create: `src/deepseek_obsidian/engine/__init__.py`
+- Create: `src/deepseek_obsidian/engine/vault.py`
 - Create: `tests/conftest.py`
 - Create: `tests/test_vault.py`
 
@@ -458,7 +458,7 @@ Building on [[machine learning basics]] and [[neural networks]].
 """Tests for vault reader."""
 
 from pathlib import Path
-from deepseek_tui.engine.vault import VaultReader, Note, scan_vault
+from deepseek_obsidian.engine.vault import VaultReader, Note, scan_vault
 
 
 class TestNote:
@@ -705,7 +705,7 @@ Expected: all 10 tests PASS
 - [ ] **Step 7: Commit and push**
 
 ```bash
-git add src/deepseek_tui/engine/__init__.py src/deepseek_tui/engine/vault.py tests/conftest.py tests/test_vault.py
+git add src/deepseek_obsidian/engine/__init__.py src/deepseek_obsidian/engine/vault.py tests/conftest.py tests/test_vault.py
 git commit -m "feat: add vault reader with frontmatter parsing and wikilink resolution"
 git push origin main
 ```
@@ -715,7 +715,7 @@ git push origin main
 ### Task 4: Permission Model and Audit Trail
 
 **Files:**
-- Create: `src/deepseek_tui/engine/permissions.py`
+- Create: `src/deepseek_obsidian/engine/permissions.py`
 - Create: `tests/test_permissions.py`
 
 - [ ] **Step 1: Write failing tests**
@@ -728,7 +728,7 @@ import tempfile
 from pathlib import Path
 
 import pytest
-from deepseek_tui.engine.permissions import (
+from deepseek_obsidian.engine.permissions import (
     AuditEntry,
     AuditTrail,
     PermissionLevel,
@@ -988,7 +988,7 @@ Expected: all 11 tests PASS
 - [ ] **Step 5: Commit and push**
 
 ```bash
-git add src/deepseek_tui/engine/permissions.py tests/test_permissions.py
+git add src/deepseek_obsidian/engine/permissions.py tests/test_permissions.py
 git commit -m "feat: add permission model with three-level posture and audit trail"
 git push origin main
 ```
@@ -998,7 +998,7 @@ git push origin main
 ### Task 5: AI Client (Multi-Provider with Streaming)
 
 **Files:**
-- Create: `src/deepseek_tui/engine/ai_client.py`
+- Create: `src/deepseek_obsidian/engine/ai_client.py`
 - Create: `tests/test_ai_client.py`
 
 - [ ] **Step 1: Write failing tests**
@@ -1007,7 +1007,7 @@ git push origin main
 """Tests for multi-provider AI client."""
 
 import pytest
-from deepseek_tui.engine.ai_client import (
+from deepseek_obsidian.engine.ai_client import (
     AIProvider,
     AIClient,
     Message,
@@ -1095,7 +1095,7 @@ class TestAIClient:
 
     def test_system_prompt_includes_note_context(self, temp_vault):
         """Integration-ish: system prompt builder uses vault context."""
-        from deepseek_tui.engine.vault import VaultReader
+        from deepseek_obsidian.engine.vault import VaultReader
 
         vault = VaultReader(temp_vault)
         note = vault.resolve_wikilink("machine learning basics")
@@ -1128,7 +1128,7 @@ from typing import AsyncIterator
 
 import httpx
 
-from deepseek_tui.engine.vault import Note
+from deepseek_obsidian.engine.vault import Note
 
 
 class AIProvider(Enum):
@@ -1279,7 +1279,7 @@ Expected: all tests PASS (note: the streaming test is a unit test, no live API c
 - [ ] **Step 5: Commit and push**
 
 ```bash
-git add src/deepseek_tui/engine/ai_client.py tests/test_ai_client.py
+git add src/deepseek_obsidian/engine/ai_client.py tests/test_ai_client.py
 git commit -m "feat: add multi-provider AI client with streaming support"
 git push origin main
 ```
@@ -1289,7 +1289,7 @@ git push origin main
 ### Task 6: Context Builder
 
 **Files:**
-- Create: `src/deepseek_tui/engine/context.py`
+- Create: `src/deepseek_obsidian/engine/context.py`
 - Create: `tests/test_context.py`
 
 - [ ] **Step 1: Write failing tests**
@@ -1297,9 +1297,9 @@ git push origin main
 ```python
 """Tests for context builder."""
 
-from deepseek_tui.engine.context import ContextBuilder, ChatHistory
-from deepseek_tui.engine.ai_client import Message
-from deepseek_tui.engine.vault import VaultReader
+from deepseek_obsidian.engine.context import ContextBuilder, ChatHistory
+from deepseek_obsidian.engine.ai_client import Message
+from deepseek_obsidian.engine.vault import VaultReader
 
 
 class TestChatHistory:
@@ -1388,8 +1388,8 @@ from __future__ import annotations
 
 import re
 
-from deepseek_tui.engine.ai_client import Message
-from deepseek_tui.engine.vault import Note, VaultReader
+from deepseek_obsidian.engine.ai_client import Message
+from deepseek_obsidian.engine.vault import Note, VaultReader
 
 WIKILINK_IN_QUERY = re.compile(r"\[\[([^\]]+)\]\]")
 
@@ -1453,7 +1453,7 @@ class ContextBuilder:
             system_prompt_builder: Optional callable to build system prompt.
                                    Takes (context_notes, permission_level) -> Message.
         """
-        from deepseek_tui.engine.ai_client import AIClient, AIProvider
+        from deepseek_obsidian.engine.ai_client import AIClient, AIProvider
 
         # Gather context notes
         linked_notes = self._extract_wikilinks(query)
@@ -1504,7 +1504,7 @@ Expected: all 5 tests PASS
 - [ ] **Step 5: Commit and push**
 
 ```bash
-git add src/deepseek_tui/engine/context.py tests/test_context.py
+git add src/deepseek_obsidian/engine/context.py tests/test_context.py
 git commit -m "feat: add context builder with vault search and chat history"
 git push origin main
 ```
@@ -1514,10 +1514,10 @@ git push origin main
 ### Task 7: TUI App Scaffold and Main Screen Layout
 
 **Files:**
-- Create: `src/deepseek_tui/app.py`
-- Create: `src/deepseek_tui/tui/__init__.py`
-- Create: `src/deepseek_tui/tui/screen.py`
-- Create: `src/deepseek_tui/tui/widgets/__init__.py`
+- Create: `src/deepseek_obsidian/app.py`
+- Create: `src/deepseek_obsidian/tui/__init__.py`
+- Create: `src/deepseek_obsidian/tui/screen.py`
+- Create: `src/deepseek_obsidian/tui/widgets/__init__.py`
 
 - [ ] **Step 1: Write `app.py` entry point**
 
@@ -1533,8 +1533,8 @@ from textual.app import App
 
 
 def main() -> None:
-    """Launch the DeepSeek-Tui application."""
-    from deepseek_tui.tui.screen import MainScreen
+    """Launch the DeepSeek-Obsidian application."""
+    from deepseek_obsidian.tui.screen import MainScreen
 
     class DeepSeekTuiApp(App):
         CSS_PATH = None  # Will be set when we have CSS
@@ -1563,10 +1563,10 @@ class MainScreen(Screen):
     """Primary screen: chat on the left, sidebar on the right, input at bottom."""
 
     def compose(self):
-        yield Static("DeepSeek-Tui — Loading...")
+        yield Static("DeepSeek-Obsidian — Loading...")
 
     def on_mount(self) -> None:
-        self.title = "DeepSeek-Tui"
+        self.title = "DeepSeek-Obsidian"
 ```
 
 - [ ] **Step 3: Write empty `__init__.py` files**
@@ -1582,14 +1582,14 @@ class MainScreen(Screen):
 - [ ] **Step 4: Verify app launches (empty screen, exits cleanly)**
 
 ```bash
-timeout 3 python -m deepseek_tui 2>&1 || true
+timeout 3 python -m deepseek_obsidian 2>&1 || true
 ```
 Expected: Textual app launches then exits after timeout (no crash)
 
 - [ ] **Step 5: Commit and push**
 
 ```bash
-git add src/deepseek_tui/app.py src/deepseek_tui/tui/
+git add src/deepseek_obsidian/app.py src/deepseek_obsidian/tui/
 git commit -m "feat: add TUI app scaffold and main screen"
 git push origin main
 ```
@@ -1599,7 +1599,7 @@ git push origin main
 ### Task 8: Chat Widget (Streaming Markdown)
 
 **Files:**
-- Create: `src/deepseek_tui/tui/widgets/chat.py`
+- Create: `src/deepseek_obsidian/tui/widgets/chat.py`
 
 - [ ] **Step 1: Write the chat widget**
 
@@ -1671,7 +1671,7 @@ class ChatView(VerticalScroll):
 
 ```bash
 python -c "
-from deepseek_tui.tui.widgets.chat import ChatView, ChatMessage
+from deepseek_obsidian.tui.widgets.chat import ChatView, ChatMessage
 # Verify classes are importable and instantiable
 cv = ChatView()
 msg = ChatMessage('user', 'test')
@@ -1684,7 +1684,7 @@ print('Chat widget tests passed')
 - [ ] **Step 3: Commit and push**
 
 ```bash
-git add src/deepseek_tui/tui/widgets/chat.py
+git add src/deepseek_obsidian/tui/widgets/chat.py
 git commit -m "feat: add chat widget with streaming markdown support"
 git push origin main
 ```
@@ -1694,7 +1694,7 @@ git push origin main
 ### Task 9: Sidebar Widget (Notes + Search)
 
 **Files:**
-- Create: `src/deepseek_tui/tui/widgets/sidebar.py`
+- Create: `src/deepseek_obsidian/tui/widgets/sidebar.py`
 
 - [ ] **Step 1: Write the sidebar widget**
 
@@ -1782,7 +1782,7 @@ class Sidebar(Container):
 
 ```bash
 python -c "
-from deepseek_tui.tui.widgets.sidebar import Sidebar, ReferencedNotesPanel, SearchPanel
+from deepseek_obsidian.tui.widgets.sidebar import Sidebar, ReferencedNotesPanel, SearchPanel
 print('Sidebar widget tests passed')
 "
 ```
@@ -1790,7 +1790,7 @@ print('Sidebar widget tests passed')
 - [ ] **Step 3: Commit and push**
 
 ```bash
-git add src/deepseek_tui/tui/widgets/sidebar.py
+git add src/deepseek_obsidian/tui/widgets/sidebar.py
 git commit -m "feat: add sidebar widget with notes panel and vault search"
 git push origin main
 ```
@@ -1800,7 +1800,7 @@ git push origin main
 ### Task 10: Input Bar + Command Hints
 
 **Files:**
-- Create: `src/deepseek_tui/tui/widgets/input_bar.py`
+- Create: `src/deepseek_obsidian/tui/widgets/input_bar.py`
 
 - [ ] **Step 1: Write the input bar widget**
 
@@ -1840,7 +1840,7 @@ class InputBar(Container):
 
 ```bash
 python -c "
-from deepseek_tui.tui.widgets.input_bar import InputBar, CommandHints
+from deepseek_obsidian.tui.widgets.input_bar import InputBar, CommandHints
 print('Input bar tests passed')
 "
 ```
@@ -1848,7 +1848,7 @@ print('Input bar tests passed')
 - [ ] **Step 3: Commit and push**
 
 ```bash
-git add src/deepseek_tui/tui/widgets/input_bar.py
+git add src/deepseek_obsidian/tui/widgets/input_bar.py
 git commit -m "feat: add input bar with send button and command hints"
 git push origin main
 ```
@@ -1858,7 +1858,7 @@ git push origin main
 ### Task 11: Header Bar
 
 **Files:**
-- Create: `src/deepseek_tui/tui/widgets/header.py`
+- Create: `src/deepseek_obsidian/tui/widgets/header.py`
 
 - [ ] **Step 1: Write the header widget**
 
@@ -1877,7 +1877,7 @@ class Header(Horizontal):
     vault_name = reactive("")
 
     def compose(self):
-        yield Static("DeepSeek-Tui", id="header-title")
+        yield Static("DeepSeek-Obsidian", id="header-title")
         yield Static("Ask", id="header-posture")
         yield Static("", id="header-vault")
 
@@ -1895,7 +1895,7 @@ class Header(Horizontal):
 
 ```bash
 python -c "
-from deepseek_tui.tui.widgets.header import Header
+from deepseek_obsidian.tui.widgets.header import Header
 print('Header widget tests passed')
 "
 ```
@@ -1903,7 +1903,7 @@ print('Header widget tests passed')
 - [ ] **Step 3: Commit and push**
 
 ```bash
-git add src/deepseek_tui/tui/widgets/header.py
+git add src/deepseek_obsidian/tui/widgets/header.py
 git commit -m "feat: add header bar with posture indicator and vault name"
 git push origin main
 ```
@@ -1913,7 +1913,7 @@ git push origin main
 ### Task 12: Slash Command System
 
 **Files:**
-- Create: `src/deepseek_tui/tui/commands.py`
+- Create: `src/deepseek_obsidian/tui/commands.py`
 - Create: `tests/test_commands.py`
 
 - [ ] **Step 1: Write failing tests**
@@ -1922,7 +1922,7 @@ git push origin main
 """Tests for slash command system."""
 
 import pytest
-from deepseek_tui.tui.commands import (
+from deepseek_obsidian.tui.commands import (
     Command,
     CommandRegistry,
     parse_command,
@@ -2070,7 +2070,7 @@ Expected: all 8 tests PASS
 - [ ] **Step 5: Commit and push**
 
 ```bash
-git add src/deepseek_tui/tui/commands.py tests/test_commands.py
+git add src/deepseek_obsidian/tui/commands.py tests/test_commands.py
 git commit -m "feat: add slash command parser and registry"
 git push origin main
 ```
@@ -2080,7 +2080,7 @@ git push origin main
 ### Task 13: Diff View for Proposed Edits
 
 **Files:**
-- Create: `src/deepseek_tui/tui/widgets/diff_view.py`
+- Create: `src/deepseek_obsidian/tui/widgets/diff_view.py`
 
 - [ ] **Step 1: Write the diff view widget**
 
@@ -2135,7 +2135,7 @@ class DiffView(Container):
 
 ```bash
 python -c "
-from deepseek_tui.tui.widgets.diff_view import DiffView
+from deepseek_obsidian.tui.widgets.diff_view import DiffView
 print('Diff view tests passed')
 "
 ```
@@ -2143,7 +2143,7 @@ print('Diff view tests passed')
 - [ ] **Step 3: Commit and push**
 
 ```bash
-git add src/deepseek_tui/tui/widgets/diff_view.py
+git add src/deepseek_obsidian/tui/widgets/diff_view.py
 git commit -m "feat: add diff view widget for proposed note edits"
 git push origin main
 ```
@@ -2153,8 +2153,8 @@ git push origin main
 ### Task 14: Wiring — Connect Engine to TUI (End-to-End)
 
 **Files:**
-- Modify: `src/deepseek_tui/tui/screen.py`
-- Modify: `src/deepseek_tui/app.py`
+- Modify: `src/deepseek_obsidian/tui/screen.py`
+- Modify: `src/deepseek_obsidian/app.py`
 
 - [ ] **Step 1: Rewrite `app.py` to wire engine + TUI**
 
@@ -2168,12 +2168,12 @@ from pathlib import Path
 from textual.app import App, ComposeResult
 from textual.widgets import Footer
 
-from deepseek_tui.config.loader import load_config
-from deepseek_tui.engine.vault import VaultReader
-from deepseek_tui.engine.ai_client import create_client
-from deepseek_tui.engine.context import ContextBuilder
-from deepseek_tui.engine.permissions import Permissions, PermissionLevel
-from deepseek_tui.tui.screen import MainScreen
+from deepseek_obsidian.config.loader import load_config
+from deepseek_obsidian.engine.vault import VaultReader
+from deepseek_obsidian.engine.ai_client import create_client
+from deepseek_obsidian.engine.context import ContextBuilder
+from deepseek_obsidian.engine.permissions import Permissions, PermissionLevel
+from deepseek_obsidian.tui.screen import MainScreen
 
 
 class DeepSeekTuiApp(App):
@@ -2369,11 +2369,11 @@ from textual.widgets import Static
 from textual.containers import Container
 from textual.widget import Widget
 
-from deepseek_tui.tui.widgets.header import Header
-from deepseek_tui.tui.widgets.chat import ChatView
-from deepseek_tui.tui.widgets.sidebar import Sidebar
-from deepseek_tui.tui.widgets.input_bar import InputBar
-from deepseek_tui.tui.commands import CommandRegistry, parse_command
+from deepseek_obsidian.tui.widgets.header import Header
+from deepseek_obsidian.tui.widgets.chat import ChatView
+from deepseek_obsidian.tui.widgets.sidebar import Sidebar
+from deepseek_obsidian.tui.widgets.input_bar import InputBar
+from deepseek_obsidian.tui.commands import CommandRegistry, parse_command
 
 
 class MainScreen(Screen):
@@ -2440,14 +2440,14 @@ class MainScreen(Screen):
 - [ ] **Step 3: Verify app launches with full layout**
 
 ```bash
-timeout 3 python -m deepseek_tui 2>&1 || true
+timeout 3 python -m deepseek_obsidian 2>&1 || true
 ```
 Expected: App launches with header, chat area, sidebar, and input bar visible.
 
 - [ ] **Step 4: Commit and push**
 
 ```bash
-git add src/deepseek_tui/app.py src/deepseek_tui/tui/screen.py
+git add src/deepseek_obsidian/app.py src/deepseek_obsidian/tui/screen.py
 git commit -m "feat: wire engine to TUI with full layout and keybindings"
 git push origin main
 ```
@@ -2457,8 +2457,8 @@ git push origin main
 ### Task 15: Slash Command Handlers (Wire All 11 Commands)
 
 **Files:**
-- Modify: `src/deepseek_tui/tui/screen.py` (add command handling)
-- Modify: `src/deepseek_tui/app.py` (add command registry)
+- Modify: `src/deepseek_obsidian/tui/screen.py` (add command handling)
+- Modify: `src/deepseek_obsidian/app.py` (add command registry)
 
 - [ ] **Step 1: Add command handlers to `app.py`**
 
@@ -2467,7 +2467,7 @@ Add this method to `DeepSeekTuiApp`:
 ```python
     def _build_command_registry(self) -> CommandRegistry:
         """Register all slash commands."""
-        from deepseek_tui.tui.commands import Command, CommandRegistry
+        from deepseek_obsidian.tui.commands import Command, CommandRegistry
 
         registry = CommandRegistry()
 
@@ -2728,7 +2728,7 @@ Add to `MainScreen`:
 
 ```bash
 python -c "
-from deepseek_tui.tui.commands import parse_command
+from deepseek_obsidian.tui.commands import parse_command
 cmd, args = parse_command('/search test query')
 assert cmd == 'search'
 assert args == 'test query'
@@ -2741,7 +2741,7 @@ print('Command parsing tests passed')
 - [ ] **Step 5: Commit and push**
 
 ```bash
-git add src/deepseek_tui/app.py src/deepseek_tui/tui/screen.py
+git add src/deepseek_obsidian/app.py src/deepseek_obsidian/tui/screen.py
 git commit -m "feat: wire all 11 slash command handlers"
 git push origin main
 ```
@@ -2751,8 +2751,8 @@ git push origin main
 ### Task 16: AI Chat Flow — Send Messages and Stream Responses
 
 **Files:**
-- Modify: `src/deepseek_tui/tui/screen.py`
-- Modify: `src/deepseek_tui/app.py`
+- Modify: `src/deepseek_obsidian/tui/screen.py`
+- Modify: `src/deepseek_obsidian/app.py`
 
 - [ ] **Step 1: Add async message sending to `MainScreen.on_input_submitted`**
 
@@ -2851,16 +2851,16 @@ Actually let me restructure — track the full content in a local variable durin
 And add the import for `Message` at top of `screen.py`:
 
 ```python
-from deepseek_tui.engine.ai_client import Message
+from deepseek_obsidian.engine.ai_client import Message
 ```
 
 - [ ] **Step 3: Verify end-to-end flow (with mock or dry run)**
 
 ```bash
 python -c "
-from deepseek_tui.engine.context import ContextBuilder, ChatHistory
-from deepseek_tui.engine.ai_client import Message
-from deepseek_tui.engine.vault import VaultReader, scan_vault
+from deepseek_obsidian.engine.context import ContextBuilder, ChatHistory
+from deepseek_obsidian.engine.ai_client import Message
+from deepseek_obsidian.engine.vault import VaultReader, scan_vault
 from pathlib import Path
 import tempfile
 
@@ -2881,7 +2881,7 @@ with tempfile.TemporaryDirectory() as tmp:
 - [ ] **Step 4: Commit and push**
 
 ```bash
-git add src/deepseek_tui/tui/screen.py src/deepseek_tui/app.py
+git add src/deepseek_obsidian/tui/screen.py src/deepseek_obsidian/app.py
 git commit -m "feat: wire AI chat flow with streaming responses and context building"
 git push origin main
 ```
@@ -2891,8 +2891,8 @@ git push origin main
 ### Task 17: Themes (Built-in Dracula, Nord, Catppuccin, Monokai)
 
 **Files:**
-- Create: `src/deepseek_tui/themes/__init__.py`
-- Create: `src/deepseek_tui/themes/builtins.py`
+- Create: `src/deepseek_obsidian/themes/__init__.py`
+- Create: `src/deepseek_obsidian/themes/builtins.py`
 
 - [ ] **Step 1: Write built-in themes**
 
@@ -2963,7 +2963,7 @@ THEMES: dict[str, dict] = {
 
 ```bash
 python -c "
-from deepseek_tui.themes.builtins import THEMES
+from deepseek_obsidian.themes.builtins import THEMES
 assert len(THEMES) == 4
 for name, theme in THEMES.items():
     assert 'primary' in theme
@@ -2976,7 +2976,7 @@ print(f'{len(THEMES)} themes validated')
 - [ ] **Step 3: Commit and push**
 
 ```bash
-git add src/deepseek_tui/themes/
+git add src/deepseek_obsidian/themes/
 git commit -m "feat: add built-in themes (dracula, nord, catppuccin, monokai)"
 git push origin main
 ```
@@ -3026,7 +3026,7 @@ jobs:
         run: mypy src/
 
       - name: Test with pytest
-        run: pytest -v --cov=deepseek_tui --cov-report=term-missing
+        run: pytest -v --cov=deepseek_obsidian --cov-report=term-missing
 ```
 
 - [ ] **Step 2: Push and verify CI runs**
@@ -3039,7 +3039,7 @@ git push origin main
 
 - [ ] **Step 3: Check CI status**
 
-After push, verify the workflow runs green at `https://github.com/Shyboy0499/DeepSeek-Tui/actions`.
+After push, verify the workflow runs green at `https://github.com/Shyboy0499/DeepSeek-Obsidian/actions`.
 
 ---
 

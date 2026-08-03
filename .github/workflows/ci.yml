@@ -33,4 +33,4 @@ jobs:
         run: mypy src/
 
       - name: Test with pytest
-        run: pytest -v --cov=deepseek_tui --cov-report=term-missing
+        run: pytest -v --cov=deepseek_obsidian --cov-report=term-missing

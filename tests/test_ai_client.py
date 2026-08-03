@@ -2,7 +2,7 @@
 
 import pytest
 
-from deepseek_tui.engine.ai_client import (
+from deepseek_obsidian.engine.ai_client import (
     AIClient,
     AIProvider,
     Message,
@@ -89,7 +89,7 @@ class TestAIClient:
         assert body["messages"][0]["role"] == "system"
 
     def test_system_prompt_includes_note_context(self, temp_vault):
-        from deepseek_tui.engine.vault import VaultReader
+        from deepseek_obsidian.engine.vault import VaultReader
 
         vault = VaultReader(temp_vault)
         note = vault.resolve_wikilink("machine learning basics")

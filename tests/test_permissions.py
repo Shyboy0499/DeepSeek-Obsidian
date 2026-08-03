@@ -5,7 +5,7 @@ from pathlib import Path
 
 import pytest
 
-from deepseek_tui.engine.permissions import (
+from deepseek_obsidian.engine.permissions import (
     AuditTrail,
     PermissionLevel,
     Permissions,

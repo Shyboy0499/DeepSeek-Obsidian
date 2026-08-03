@@ -2,7 +2,7 @@
 
 from pathlib import Path
 
-from deepseek_tui.engine.vault import Note, VaultReader, scan_vault
+from deepseek_obsidian.engine.vault import Note, VaultReader, scan_vault
 
 
 class TestNote:

@@ -1,4 +1,4 @@
-# DeepSeek-Tui Design Specification
+# DeepSeek-Obsidian Design Specification
 
 **Date:** 2026-07-30
 **Status:** Approved
@@ -6,7 +6,7 @@
 
 ## Overview
 
-An AI-native note-taking and research assistant for the terminal, with deep Obsidian vault integration. Chat-first interface inspired by CodeWhale/DeepSeek-TUI but differentiated by its focus on local knowledge management rather than code generation.
+An AI-native note-taking and research assistant for the terminal, with deep Obsidian vault integration. Chat-first interface inspired by CodeWhale/DeepSeek-Obsidian but differentiated by its focus on local knowledge management rather than code generation.
 
 ## Architecture
 
@@ -90,7 +90,7 @@ When the AI proposes an edit, it appears inline in the chat as a diff:
 
 ```
 ┌──────────────────────────────────────────────────────────┐
-│ DeepSeek-Tui                    Ask │ [vault: research/]  │  Header bar
+│ DeepSeek-Obsidian                    Ask │ [vault: research/]  │  Header bar
 ├────────────────────────────┬─────────────────────────────┤
 │                            │                             │
 │  Chat messages             │  Referenced Notes           │
@@ -134,7 +134,7 @@ When the AI proposes an edit, it appears inline in the chat as a diff:
 
 ## Configuration
 
-Location: `~/.config/deepseek-tui/config.toml`
+Location: `~/.config/deepseek-obsidian/config.toml`
 
 ```toml
 [vault]
@@ -172,17 +172,17 @@ sidebar_width = 35
 
 ## Distribution
 
-- `pyproject.toml` with `[project.scripts]` entrypoint for `deepseek-tui`
+- `pyproject.toml` with `[project.scripts]` entrypoint for `deepseek-obsidian`
 - CI builds macOS binaries via PyInstaller, pushed as GitHub releases
-- Separate `homebrew-deepseek-tui` tap repo hosts the formula
-- `pip install deepseek-tui` as an additional install path
+- Separate `homebrew-deepseek-obsidian` tap repo hosts the formula
+- `pip install deepseek-obsidian` as an additional install path
 
 ## Development Workflow
 
 - Small, atomic PRs — each merged automatically on green CI
 - Each PR is a self-contained, testable change
 - Enables easy `git bisect` if a bug is introduced
-- repo: `Shyboy0499/DeepSeek-Tui`
+- repo: `Shyboy0499/DeepSeek-Obsidian`
 
 ## Out of Scope (Future)
 

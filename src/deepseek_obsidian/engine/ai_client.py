@@ -9,7 +9,7 @@ from enum import Enum
 
 import httpx
 
-from deepseek_tui.engine.vault import Note
+from deepseek_obsidian.engine.vault import Note
 
 
 class AIProvider(Enum):

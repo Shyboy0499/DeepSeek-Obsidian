@@ -51,7 +51,7 @@ class HelpModal(ModalScreen[None]):
 
     def compose(self) -> ComposeResult:
         with Vertical(id="help-dialog"):
-            yield Static("⌨️  DeepSeek-Tui Help", id="help-title")
+            yield Static("⌨️  DeepSeek-Obsidian Help", id="help-title")
             with Container(id="help-body"):
                 yield Static("[bold]Commands[/bold]")
                 yield Static("\n".join(self._commands) + "\n")

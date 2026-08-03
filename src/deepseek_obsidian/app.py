@@ -6,12 +6,12 @@ from pathlib import Path
 
 from textual.app import App
 
-from deepseek_tui.config.loader import load_config
-from deepseek_tui.engine.ai_client import AIClient, create_client
-from deepseek_tui.engine.context import ContextBuilder
-from deepseek_tui.engine.permissions import PermissionLevel, Permissions
-from deepseek_tui.engine.vault import VaultReader
-from deepseek_tui.tui.screen import MainScreen
+from deepseek_obsidian.config.loader import load_config
+from deepseek_obsidian.engine.ai_client import AIClient, create_client
+from deepseek_obsidian.engine.context import ContextBuilder
+from deepseek_obsidian.engine.permissions import PermissionLevel, Permissions
+from deepseek_obsidian.engine.vault import VaultReader
+from deepseek_obsidian.tui.screen import MainScreen
 
 
 class DeepSeekTuiApp(App):
@@ -254,7 +254,7 @@ class DeepSeekTuiApp(App):
             self.vault.refresh()
 
     def _build_command_registry(self):
-        from deepseek_tui.tui.commands import Command, CommandRegistry
+        from deepseek_obsidian.tui.commands import Command, CommandRegistry
 
         registry = CommandRegistry()
 
@@ -318,7 +318,7 @@ class DeepSeekTuiApp(App):
         model = parts[1] if len(parts) > 1 else None
 
         try:
-            from deepseek_tui.engine.ai_client import AIProvider
+            from deepseek_obsidian.engine.ai_client import AIProvider
             prov = AIProvider.from_string(provider_name)
             chosen_model = model or prov.default_model
             self.ai_client = create_client(
@@ -372,7 +372,7 @@ class DeepSeekTuiApp(App):
             chat_view = screen.chat_view
             # Get the last assistant message content from the chat view children
             for child in reversed(list(chat_view.children)):
-                from deepseek_tui.tui.widgets.chat import ChatMessage
+                from deepseek_obsidian.tui.widgets.chat import ChatMessage
                 if isinstance(child, ChatMessage) and child.role == "assistant":
                     content = child.text
                     break
@@ -445,7 +445,7 @@ class DeepSeekTuiApp(App):
         screen = self.screen
         if isinstance(screen, MainScreen):
             lines = []
-            from deepseek_tui.tui.widgets.chat import ChatMessage
+            from deepseek_obsidian.tui.widgets.chat import ChatMessage
             for child in screen.chat_view.children:
                 if isinstance(child, ChatMessage):
                     lines.append(f"## {child.role}\n\n{child.text}\n")
@@ -487,7 +487,7 @@ class DeepSeekTuiApp(App):
             return "Usage: /perm ask|review|full  (or press Tab to cycle)"
 
     def _cmd_help(self, args: str) -> str | None:
-        from deepseek_tui.tui.screens.help import HelpModal
+        from deepseek_obsidian.tui.screens.help import HelpModal
 
         commands = [
             f"  /{cmd.name} — {cmd.description}"
@@ -509,17 +509,17 @@ class DeepSeekTuiApp(App):
 def main() -> None:
     import argparse
 
-    from deepseek_tui import __version__
+    from deepseek_obsidian import __version__
 
     parser = argparse.ArgumentParser(
-        prog="deepseek-tui",
+        prog="deepseek-obsidian",
         description=(
             "AI-native note-taking and research assistant "
             "for the terminal with Obsidian integration."
         ),
     )
     parser.add_argument(
-        "--version", action="version", version=f"deepseek-tui {__version__}"
+        "--version", action="version", version=f"deepseek-obsidian {__version__}"
     )
     parser.add_argument(
         "--vault", type=str, metavar="PATH",

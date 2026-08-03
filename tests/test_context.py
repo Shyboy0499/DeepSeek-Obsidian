@@ -1,8 +1,8 @@
 """Tests for context builder."""
 
-from deepseek_tui.engine.ai_client import Message
-from deepseek_tui.engine.context import ChatHistory, ContextBuilder
-from deepseek_tui.engine.vault import VaultReader
+from deepseek_obsidian.engine.ai_client import Message
+from deepseek_obsidian.engine.context import ChatHistory, ContextBuilder
+from deepseek_obsidian.engine.vault import VaultReader
 
 
 class TestChatHistory:

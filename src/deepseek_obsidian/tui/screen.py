@@ -5,13 +5,13 @@ import re
 from textual.containers import Container
 from textual.screen import Screen
 
-from deepseek_tui.engine.ai_client import Message
-from deepseek_tui.tui.commands import parse_command
-from deepseek_tui.tui.widgets.chat import ChatView
-from deepseek_tui.tui.widgets.diff_view import DiffView
-from deepseek_tui.tui.widgets.header import Header
-from deepseek_tui.tui.widgets.input_bar import InputBar
-from deepseek_tui.tui.widgets.sidebar import Sidebar
+from deepseek_obsidian.engine.ai_client import Message
+from deepseek_obsidian.tui.commands import parse_command
+from deepseek_obsidian.tui.widgets.chat import ChatView
+from deepseek_obsidian.tui.widgets.diff_view import DiffView
+from deepseek_obsidian.tui.widgets.header import Header
+from deepseek_obsidian.tui.widgets.input_bar import InputBar
+from deepseek_obsidian.tui.widgets.sidebar import Sidebar
 
 PROPOSAL_PATTERN = re.compile(
     r'---PROPOSE title="(?P<title>[^"]+)"\s*\n'
@@ -140,7 +140,7 @@ class MainScreen(Screen):
             self.chat_view.start_assistant_message()
             prov = self._app.config.provider.upper()
             self.chat_view.stream_chunk(
-                f"No {prov}_API_KEY set. Export your key and restart deepseek-tui."
+                f"No {prov}_API_KEY set. Export your key and restart deepseek-obsidian."
             )
             self.chat_view.finish_assistant_message()
             return

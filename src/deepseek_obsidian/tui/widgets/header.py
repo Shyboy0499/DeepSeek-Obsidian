@@ -12,7 +12,7 @@ class Header(Horizontal):
     vault_name = reactive("")
 
     def compose(self):
-        yield Static("DeepSeek-Tui", id="header-title")
+        yield Static("DeepSeek-Obsidian", id="header-title")
         yield Static("Ask", id="header-posture")
         yield Static("", id="header-vault")
 

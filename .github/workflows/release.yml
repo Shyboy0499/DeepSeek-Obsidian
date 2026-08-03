@@ -34,8 +34,8 @@ jobs:
           fi
           pyinstaller \
             --onefile \
-            --name "deepseek-tui-macos-${TARGET_ARCH}" \
-            --add-data "src/deepseek_tui:deepseek_tui" \
+            --name "deepseek-obsidian-macos-${TARGET_ARCH}" \
+            --add-data "src/deepseek_obsidian:deepseek_obsidian" \
             --hidden-import textual \
             --hidden-import textual.widgets \
             --hidden-import textual.containers \
@@ -45,11 +45,11 @@ jobs:
             --hidden-import httpx \
             --hidden-import frontmatter \
             --collect-all textual \
-            src/deepseek_tui/app.py
+            src/deepseek_obsidian/app.py
 
       - name: Verify binary
         run: |
-          BINARY=$(ls ./dist/deepseek-tui-macos-* 2>/dev/null | head -1)
+          BINARY=$(ls ./dist/deepseek-obsidian-macos-* 2>/dev/null | head -1)
           if [ -f "$BINARY" ] && [ -x "$BINARY" ]; then
             echo "Binary built: $(file "$BINARY")"
             echo "Size: $(ls -lh "$BINARY" | awk '{print $5}')"
@@ -61,8 +61,8 @@ jobs:
       - name: Upload binary artifact
         uses: actions/upload-artifact@v4
         with:
-          name: deepseek-tui-macos-${{ matrix.arch }}
-          path: dist/deepseek-tui-macos-*
+          name: deepseek-obsidian-macos-${{ matrix.arch }}
+          path: dist/deepseek-obsidian-macos-*
 
   release:
     needs: build-macos
@@ -81,7 +81,7 @@ jobs:
       - name: Prepare release assets
         run: |
           mkdir -p release-assets
-          find dist/ -type f -name "deepseek-tui-*" -exec cp {} release-assets/ \;
+          find dist/ -type f -name "deepseek-obsidian-*" -exec cp {} release-assets/ \;
           ls -la release-assets/
 
       - name: Generate SHA256 checksums
