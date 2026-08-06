@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import os
 import re
 from dataclasses import dataclass, field
 from pathlib import Path
@@ -27,50 +28,52 @@ class Note:
         return WIKILINK_PATTERN.findall(self.content)
 
 
-def _extract_title(path: Path, content: str) -> str:
-    """Extract title from frontmatter, or fall back to first # heading, or filename."""
+def _parse_metadata(path: Path, content: str) -> tuple[str, list[str]]:
+    """Parse frontmatter once, returning title and tags.
+
+    Title fallback: first # heading, then filename stem.
+    """
+    tags: list[str] = []
+    title = ""
     try:
         post = frontmatter.loads(content)
         if post.get("title"):
-            return str(post["title"])
+            title = str(post["title"])
+        fm_tags = post.get("tags", [])
+        if isinstance(fm_tags, list):
+            tags = [str(t) for t in fm_tags]
     except Exception:
         pass
 
-    for line in content.splitlines():
-        stripped = line.strip()
-        if stripped.startswith("# "):
-            return stripped[2:].strip()
+    if not title:
+        for line in content.splitlines():
+            stripped = line.strip()
+            if stripped.startswith("# "):
+                title = stripped[2:].strip()
+                break
+    if not title:
+        title = path.stem
 
-    return path.stem
-
-
-def _extract_tags(content: str) -> list[str]:
-    """Extract tags from frontmatter."""
-    try:
-        post = frontmatter.loads(content)
-        tags = post.get("tags", [])
-        if isinstance(tags, list):
-            return [str(t) for t in tags]
-    except Exception:
-        pass
-    return []
+    return title, tags
 
 
 def scan_vault(vault_path: Path, exclude_dirs: list[str] | None = None) -> list[Note]:
     """Scan an Obsidian vault directory for all .md files, returning Note objects."""
-    exclude_dirs = exclude_dirs or []
+    exclude_set = set(exclude_dirs or [])
     notes: list[Note] = []
 
-    for md_file in vault_path.rglob("*.md"):
-        parts = set(md_file.relative_to(vault_path).parts[:-1])
-        if parts & set(exclude_dirs):
-            continue
+    for dirpath_str, dirnames, filenames in os.walk(str(vault_path)):
+        # Prune excluded directories before descending
+        dirnames[:] = [d for d in dirnames if d not in exclude_set]
 
-        content = md_file.read_text(encoding="utf-8")
-        title = _extract_title(md_file, content)
-        tags = _extract_tags(content)
-
-        notes.append(Note(path=md_file, title=title, tags=tags, content=content))
+        dirpath = Path(dirpath_str)
+        for filename in filenames:
+            if not filename.endswith(".md"):
+                continue
+            md_file = dirpath / filename
+            content = md_file.read_text(encoding="utf-8")
+            title, tags = _parse_metadata(md_file, content)
+            notes.append(Note(path=md_file, title=title, tags=tags, content=content))
 
     return notes
 
