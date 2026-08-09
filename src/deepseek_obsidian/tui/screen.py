@@ -241,8 +241,8 @@ class MainScreen(Screen):
             previous = note.content
             updated = note.content.replace(old_text, new_text, 1)
             note.path.write_text(updated)
-            self._app.permissions.audit_trail.record(
-                "write", str(note.path),
+            self._app.permissions.record_write(
+                str(note.path),
                 f"Applied edit to {note_title}",
                 previous_content=previous,
             )

@@ -106,12 +106,34 @@ class AuditTrail:
         return trail
 
 
+AUDIT_FILE = Path.home() / ".config" / "deepseek-obsidian" / "audit.json"
+
+
 class Permissions:
     """Manages current permission level for the session."""
 
     def __init__(self, level: PermissionLevel = PermissionLevel.ASK):
         self.level = level
         self._audit_trail = AuditTrail()
+        self._load_audit()
+
+    def _load_audit(self) -> None:
+        if AUDIT_FILE.exists():
+            try:
+                self._audit_trail = AuditTrail.load(AUDIT_FILE)
+            except Exception:
+                pass
+
+    def _save_audit(self) -> None:
+        AUDIT_FILE.parent.mkdir(parents=True, exist_ok=True)
+        try:
+            self._audit_trail.save(AUDIT_FILE)
+        except Exception:
+            pass
+
+    def record_write(self, target: str, detail: str, previous_content: str = "") -> None:
+        self._audit_trail.record("write", target, detail, previous_content)
+        self._save_audit()
 
     @property
     def audit_trail(self) -> AuditTrail:

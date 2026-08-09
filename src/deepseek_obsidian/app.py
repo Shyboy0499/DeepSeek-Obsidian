@@ -249,6 +249,9 @@ class DeepSeekTuiApp(App):
         else:
             self._notify_chat(f"Cannot undo: no previous state saved for {target.name}")
 
+        # Persist the updated audit trail
+        self.permissions._save_audit()
+
         # Refresh vault if loaded
         if self.vault:
             self.vault.refresh()
@@ -383,8 +386,8 @@ class DeepSeekTuiApp(App):
         filename = args.strip() if args.strip() else "untitled.md"
         filepath = self.vault.vault_path / filename
         filepath.write_text(str(content))
-        self.permissions.audit_trail.record(
-            "write", str(filepath), "Created note from AI response",
+        self.permissions.record_write(
+            str(filepath), "Created note from AI response",
             previous_content="__NEW_FILE__",
         )
         return f"Saved to {filename}"
@@ -404,8 +407,8 @@ class DeepSeekTuiApp(App):
             prev = note.content
             content = prev + f"\n\nSee also: [[{to_note}]]"
             note.path.write_text(content)
-            self.permissions.audit_trail.record(
-                "write", str(note.path),
+            self.permissions.record_write(
+                str(note.path),
                 f"Added link to [[{to_note}]]",
                 previous_content=prev,
             )
