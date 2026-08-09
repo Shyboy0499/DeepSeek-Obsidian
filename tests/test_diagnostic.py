@@ -4,8 +4,7 @@ These are the tests you run when a bug report comes in. Each test
 isolates one component and validates edge cases that commonly break.
 """
 
-import pytest
-from deepseek_obsidian.tui.screen import _parse_proposals, _clean_response
+from deepseek_obsidian.tui.screen import _clean_response, _parse_proposals
 
 
 class TestProposalParserDiagnostics:
