@@ -5,6 +5,7 @@ from __future__ import annotations
 import asyncio
 import os
 import re
+from collections.abc import Callable
 from dataclasses import dataclass, field
 from pathlib import Path
 
@@ -86,7 +87,7 @@ class VaultReader:
         self,
         vault_path: Path,
         exclude_dirs: list[str] | None = None,
-        on_change: callable | None = None,
+        on_change: Callable[[], None] | None = None,
     ):
         self.vault_path = vault_path
         self.exclude_dirs = exclude_dirs or []

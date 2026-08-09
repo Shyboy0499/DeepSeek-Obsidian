@@ -148,7 +148,7 @@ class AIClient:
     ) -> AsyncIterator[StreamChunk]:
         body = self._build_body(messages)
 
-        last_error = None
+        last_error: Exception | None = None
         for attempt in range(MAX_RETRIES + 1):
             try:
                 async with httpx.AsyncClient(timeout=60.0) as client:
