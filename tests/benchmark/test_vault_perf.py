@@ -8,8 +8,7 @@ import tempfile
 import time
 from pathlib import Path
 
-import pytest
-from deepseek_obsidian.engine.vault import scan_vault, VaultReader
+from deepseek_obsidian.engine.vault import VaultReader, scan_vault
 
 
 def _make_vault(num_notes: int, with_frontmatter: bool = False) -> Path:

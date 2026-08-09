@@ -4,16 +4,15 @@ These validate that all layers (config → vault → context → AI client)
 work together correctly. Run before release.
 """
 
-import os
 import tempfile
 from pathlib import Path
 
 import pytest
-from deepseek_obsidian.config.loader import load_config
-from deepseek_obsidian.engine.vault import VaultReader
+
+from deepseek_obsidian.engine.ai_client import AIClient, AIProvider
 from deepseek_obsidian.engine.context import ContextBuilder
-from deepseek_obsidian.engine.permissions import Permissions, PermissionLevel
-from deepseek_obsidian.engine.ai_client import AIClient, AIProvider, Message
+from deepseek_obsidian.engine.permissions import PermissionLevel, Permissions
+from deepseek_obsidian.engine.vault import VaultReader
 
 
 @pytest.fixture

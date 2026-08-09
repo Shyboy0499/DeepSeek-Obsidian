@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import asyncio
 import json
 from collections.abc import AsyncIterator
 from dataclasses import dataclass
@@ -10,6 +11,10 @@ from enum import Enum
 import httpx
 
 from deepseek_obsidian.engine.vault import Note
+
+RETRYABLE_STATUS = {429, 500, 502, 503, 504}
+MAX_RETRIES = 3
+RETRY_BASE_DELAY = 1.0  # seconds, doubles each retry
 
 
 class AIProvider(Enum):
@@ -143,35 +148,68 @@ class AIClient:
     ) -> AsyncIterator[StreamChunk]:
         body = self._build_body(messages)
 
-        async with httpx.AsyncClient(timeout=60.0) as client:
-            async with client.stream(
-                "POST",
-                f"{self.provider.base_url}/chat/completions",
-                headers=self._headers(),
-                json=body,
-            ) as response:
-                response.raise_for_status()
-                async for line in response.aiter_lines():
-                    if line.startswith("data: "):
-                        data = line[6:]
-                        if data.strip() == "[DONE]":
-                            yield StreamChunk(content="", is_done=True)
-                            return
-                        try:
-                            chunk = json.loads(data)
-                            if not self.last_actual_model:
-                                self.last_actual_model = chunk.get("model", "")
-                            delta = chunk.get("choices", [{}])[0].get("delta", {})
-                            content = delta.get("content", "")
-                            reasoning = delta.get("reasoning_content", "")
-                            if content or reasoning:
-                                yield StreamChunk(
-                                    content=content,
-                                    reasoning=reasoning,
-                                )
-                        except (json.JSONDecodeError, KeyError, IndexError):
+        last_error = None
+        for attempt in range(MAX_RETRIES + 1):
+            try:
+                async with httpx.AsyncClient(timeout=60.0) as client:
+                    async with client.stream(
+                        "POST",
+                        f"{self.provider.base_url}/chat/completions",
+                        headers=self._headers(),
+                        json=body,
+                    ) as response:
+                        if response.status_code in RETRYABLE_STATUS and attempt < MAX_RETRIES:
+                            delay = RETRY_BASE_DELAY * (2 ** attempt)
+                            yield StreamChunk(
+                                content=f"\n[dim]Server busy, retrying in {delay:.0f}s...[/dim]\n",
+                            )
+                            await asyncio.sleep(delay)
                             continue
+                        response.raise_for_status()
+                        async for line in response.aiter_lines():
+                            if line.startswith("data: "):
+                                data = line[6:]
+                                if data.strip() == "[DONE]":
+                                    yield StreamChunk(content="", is_done=True)
+                                    return
+                                try:
+                                    chunk = json.loads(data)
+                                    if not self.last_actual_model:
+                                        self.last_actual_model = chunk.get("model", "")
+                                    delta = chunk.get("choices", [{}])[0].get("delta", {})
+                                    content = delta.get("content", "")
+                                    reasoning = delta.get("reasoning_content", "")
+                                    if content or reasoning:
+                                        yield StreamChunk(
+                                            content=content,
+                                            reasoning=reasoning,
+                                        )
+                                except (json.JSONDecodeError, KeyError, IndexError):
+                                    continue
+                        return  # success
+            except httpx.HTTPStatusError as e:
+                if e.response.status_code in RETRYABLE_STATUS and attempt < MAX_RETRIES:
+                    last_error = e
+                    delay = RETRY_BASE_DELAY * (2 ** attempt)
+                    yield StreamChunk(
+                        content=f"\n[dim]Server error, retrying in {delay:.0f}s...[/dim]\n",
+                    )
+                    await asyncio.sleep(delay)
+                else:
+                    raise
+            except (httpx.ConnectError, httpx.ReadError, httpx.RemoteProtocolError) as e:
+                if attempt < MAX_RETRIES:
+                    last_error = e
+                    delay = RETRY_BASE_DELAY * (2 ** attempt)
+                    yield StreamChunk(
+                        content=f"\n[dim]Connection lost, retrying in {delay:.0f}s...[/dim]\n",
+                    )
+                    await asyncio.sleep(delay)
+                else:
+                    raise
 
+        if last_error:
+            raise last_error
         yield StreamChunk(content="", is_done=True)
 
 

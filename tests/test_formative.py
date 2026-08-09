@@ -8,11 +8,10 @@ import os
 import tempfile
 from pathlib import Path
 
-import pytest
-from deepseek_obsidian.config.loader import Config, load_config
-from deepseek_obsidian.engine.permissions import AuditTrail
+from deepseek_obsidian.config.loader import load_config
 from deepseek_obsidian.engine.ai_client import AIProvider
-from deepseek_obsidian.tui.commands import parse_command, CommandRegistry, Command
+from deepseek_obsidian.engine.permissions import AuditTrail
+from deepseek_obsidian.tui.commands import Command, CommandRegistry, parse_command
 
 
 class TestConfigFormative:
