@@ -230,16 +230,17 @@ class MainScreen(Screen):
             self.chat_view.finish_assistant_message()
             return
 
-        def do_accept() -> None:
+        def do_accept(replacement_text: str) -> None:
             if old_text not in note.content:
                 self.chat_view.start_assistant_message()
                 self.chat_view.stream_chunk(
-                    f'[red]Edit failed: text not found in "{note_title}".[/red]'
+                    f'[red]Edit failed: text not found in "{note_title}".'
+                    f'[/red]'
                 )
                 self.chat_view.finish_assistant_message()
                 return
             previous = note.content
-            updated = note.content.replace(old_text, new_text, 1)
+            updated = note.content.replace(old_text, replacement_text, 1)
             note.path.write_text(updated)
             self._app.permissions.record_write(
                 str(note.path),
