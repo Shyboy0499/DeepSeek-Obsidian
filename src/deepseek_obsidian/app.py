@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import os
 from pathlib import Path
 
 from textual.app import App
@@ -114,6 +115,7 @@ class DeepSeekTuiApp(App):
         self.context_builder: ContextBuilder | None = None
         self._cli_vault = cli_vault
         self._vault_candidates: list[Path] = []
+        self._detect_terminal_theme()
 
     def on_mount(self) -> None:
         self._command_registry = self._build_command_registry()
@@ -175,6 +177,21 @@ class DeepSeekTuiApp(App):
                 if search_dir not in candidates:
                     candidates.append(search_dir)
         return candidates
+
+    def _detect_terminal_theme(self) -> None:
+        """Set theme based on terminal background color.
+        Uses $COLORFGBG (common in most terminals): format "fg;bg".
+        0-7 = dark, 8-15 = light.
+        """
+        colorfgbg = os.environ.get("COLORFGBG", "")
+        try:
+            _, bg = colorfgbg.split(";")
+            bg_val = int(bg)
+        except (ValueError, IndexError):
+            bg_val = 0  # default: assume dark
+
+        if bg_val >= 7:
+            self.theme = "textual-light"
 
     def _notify_chat(self, message: str) -> None:
         screen = self.screen
@@ -469,14 +486,20 @@ class DeepSeekTuiApp(App):
 
     def _cmd_theme(self, args: str) -> str:
         theme = args.strip()
-        available = ["terminal", "dracula", "nord", "catppuccin", "monokai"]
-        if theme == "terminal":
+        available = [
+            "dark", "light", "terminal",
+            "dracula", "nord", "catppuccin", "monokai",
+        ]
+        if theme == "terminal" or theme == "dark":
             self.theme = "textual-dark"
-            return "Theme: terminal-native colors."
+            return "Theme: dark (terminal-native)."
+        if theme == "light":
+            self.theme = "textual-light"
+            return "Theme: light."
         if theme in available:
             self.theme = theme
             return f"Theme changed to {theme}."
-        return f"Available themes: {', '.join(available)}"
+        return f"Available: {', '.join(available)}"
 
     def _cmd_perm(self, args: str) -> str:
         try:
