@@ -201,11 +201,24 @@ class DeepSeekTuiApp(App):
             screen.chat_view.finish_assistant_message()
 
     def _load_vault(self, path: Path) -> None:
-        self.vault = VaultReader(path, exclude_dirs=self.config.exclude_dirs)
+        def _on_vault_change() -> None:
+            self._notify_chat("📁 Vault changed — index refreshed.")
+
+        if self.vault:
+            self.vault.stop_watcher()
+
+        self.vault = VaultReader(
+            path,
+            exclude_dirs=self.config.exclude_dirs,
+            on_change=_on_vault_change,
+        )
         if self.vault:
             self.context_builder = ContextBuilder(
                 self.vault, max_notes=self.config.max_notes
             )
+            if self.config.incremental_index:
+                import asyncio
+                asyncio.create_task(self.vault.start_watcher())
         note_count = len(self.vault.notes)
         lines = [
             f"📁 Vault connected: {path.name} ({note_count} notes)",

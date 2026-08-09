@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import asyncio
 import os
 import re
 from dataclasses import dataclass, field
@@ -81,11 +82,18 @@ def scan_vault(vault_path: Path, exclude_dirs: list[str] | None = None) -> list[
 class VaultReader:
     """Reads and indexes an Obsidian vault."""
 
-    def __init__(self, vault_path: Path, exclude_dirs: list[str] | None = None):
+    def __init__(
+        self,
+        vault_path: Path,
+        exclude_dirs: list[str] | None = None,
+        on_change: callable | None = None,
+    ):
         self.vault_path = vault_path
         self.exclude_dirs = exclude_dirs or []
         self._notes: list[Note] = []
         self._by_slug: dict[str, Note] = {}
+        self._on_change = on_change
+        self._watcher_task: asyncio.Task | None = None
         self.refresh()
 
     def refresh(self) -> None:
@@ -96,6 +104,27 @@ class VaultReader:
             slug = note.title.lower().replace(" ", "-")
             self._by_slug[slug] = note
             self._by_slug[note.title.lower()] = note
+
+    async def start_watcher(self) -> None:
+        """Watch vault for .md file changes and auto-refresh."""
+        if self._watcher_task is not None:
+            return
+
+        from watchfiles import awatch
+
+        async def _watch() -> None:
+            async for _ in awatch(str(self.vault_path)):
+                self.refresh()
+                if self._on_change:
+                    self._on_change()
+
+        self._watcher_task = asyncio.create_task(_watch())
+
+    def stop_watcher(self) -> None:
+        """Stop the file watcher if running."""
+        if self._watcher_task:
+            self._watcher_task.cancel()
+            self._watcher_task = None
 
     @property
     def notes(self) -> list[Note]:
