@@ -213,8 +213,13 @@ class DeepSeekTuiApp(App):
             on_change=_on_vault_change,
         )
         if self.vault:
+            session_path = (
+                Path.home() / ".config" / "deepseek-obsidian" / "sessions"
+                / f"{self.vault.vault_path.name}.json"
+            )
             self.context_builder = ContextBuilder(
-                self.vault, max_notes=self.config.max_notes
+                self.vault, max_notes=self.config.max_notes,
+                session_path=session_path,
             )
             if self.config.incremental_index:
                 import asyncio
@@ -223,6 +228,11 @@ class DeepSeekTuiApp(App):
         lines = [
             f"📁 Vault connected: {path.name} ({note_count} notes)",
         ]
+        if self.context_builder and self.context_builder.restored_count:
+            lines.append(
+                f"💬 Restored {self.context_builder.restored_count} "
+                f"messages from last session"
+            )
         if not self.config.api_key:
             provider = self.config.provider.upper()
             lines.append(

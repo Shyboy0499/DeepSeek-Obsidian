@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import re
+from pathlib import Path
 
 from deepseek_obsidian.engine.ai_client import AIClient, AIProvider, Message
 from deepseek_obsidian.engine.vault import Note, VaultReader
@@ -11,11 +12,12 @@ WIKILINK_IN_QUERY = re.compile(r"\[\[([^\]]+)\]\]")
 
 
 class ChatHistory:
-    """Ring-buffer for chat messages."""
+    """Ring-buffer for chat messages with session persistence."""
 
-    def __init__(self, max_messages: int = 50):
+    def __init__(self, max_messages: int = 50, session_path: Path | None = None):
         self.max_messages = max_messages
         self._messages: list[Message] = []
+        self._session_path = session_path
 
     @property
     def messages(self) -> list[Message]:
@@ -25,18 +27,58 @@ class ChatHistory:
         self._messages.append(message)
         if len(self._messages) > self.max_messages:
             self._messages = self._messages[-self.max_messages:]
+        self._save()
 
     def clear(self) -> None:
         self._messages.clear()
+        self._save()
+
+    def _save(self) -> None:
+        if not self._session_path:
+            return
+        try:
+            import json
+            self._session_path.parent.mkdir(parents=True, exist_ok=True)
+            data = [m.to_dict() for m in self._messages]
+            self._session_path.write_text(json.dumps(data, indent=2))
+        except Exception:
+            pass
+
+    def load(self) -> int:
+        """Load messages from session file. Returns count of restored messages."""
+        if not self._session_path or not self._session_path.exists():
+            return 0
+        try:
+            import json
+            data = json.loads(self._session_path.read_text())
+            self._messages = [Message(**m) for m in data]
+            return len(self._messages)
+        except Exception:
+            return 0
 
 
 class ContextBuilder:
     """Builds AI prompts by searching the vault and assembling context."""
 
-    def __init__(self, vault: VaultReader, max_notes: int = 10):
+    def __init__(
+        self, vault: VaultReader, max_notes: int = 10,
+        session_path: Path | None = None,
+    ):
         self.vault = vault
         self.max_notes = max_notes
-        self.history = ChatHistory()
+        self.history = ChatHistory(session_path=session_path)
+        if session_path:
+            restored = self.history.load()
+            if restored:
+                self._restored_count = restored
+            else:
+                self._restored_count = 0
+        else:
+            self._restored_count = 0
+
+    @property
+    def restored_count(self) -> int:
+        return self._restored_count
 
     def _extract_wikilinks(self, query: str) -> list[Note]:
         """Find notes explicitly referenced via [[wikilinks]] in the query."""
