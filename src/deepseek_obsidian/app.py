@@ -322,6 +322,10 @@ class DeepSeekTuiApp(App):
             handler=self._cmd_link,
         ))
         registry.register(Command(
+            name="new", description="Create a new note",
+            handler=self._cmd_new,
+        ))
+        registry.register(Command(
             name="vault", description="Switch to a different vault",
             handler=self._cmd_vault,
         ))
@@ -454,6 +458,28 @@ class DeepSeekTuiApp(App):
             )
             return f"Linked [[{from_note}]] -> [[{to_note}]]"
         return f"Note not found: \"{from_note}\" — check the title with /search"
+
+    def _cmd_new(self, args: str) -> str:
+        if not self.vault:
+            return "No vault loaded. Use /vault <path> to open one."
+        if not self.permissions.can_write():
+            return (
+                "Cannot create: permission is 'Ask' (read-only). "
+                "Press Tab to cycle to Full Access, or use /perm full."
+            )
+        title = args.strip() or "untitled"
+        filename = f"{title}.md"
+        filepath = self.vault.vault_path / filename
+        if filepath.exists():
+            return f"Note already exists: {filename}"
+        content = f"# {title}\n\n"
+        filepath.write_text(content)
+        self.permissions.record_write(
+            str(filepath), f"Created note: {title}",
+            previous_content="__NEW_FILE__",
+        )
+        self.vault.refresh()
+        return f"Created: [[{title}]]"
 
     def _cmd_vault(self, args: str) -> str:
         arg = args.strip()
