@@ -4,6 +4,7 @@ import re
 
 from textual.containers import Container
 from textual.screen import Screen
+from textual.widgets import ListView
 
 from deepseek_obsidian.engine.ai_client import Message
 from deepseek_obsidian.tui.commands import parse_command
@@ -56,6 +57,17 @@ class MainScreen(Screen):
 
     def on_mount(self) -> None:
         self._update_header()
+
+    def on_list_view_selected(self, event: ListView.Selected) -> None:
+        """Show note preview when a note is clicked in the sidebar."""
+        if not event.item or not event.item.children:
+            return
+        text = str(event.item.children[0].render())
+        # Path is on the second line (after the title)
+        lines = text.strip().split("\n")
+        if len(lines) >= 2:
+            path = lines[1].strip()
+            self.sidebar.preview.show_note(path)
 
     def _update_header(self) -> None:
         header = self.query_one(Header)

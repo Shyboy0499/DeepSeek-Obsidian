@@ -1,7 +1,36 @@
-"""Sidebar widget — referenced notes panel and search results."""
+"""Sidebar widget — referenced notes panel, search results, and note preview."""
 
 from textual.containers import Container, Vertical
 from textual.widgets import Input, ListItem, ListView, Static
+
+
+class NotePreview(Vertical):
+    """Shows preview content of a selected note."""
+
+    def __init__(self):
+        super().__init__()
+
+    def compose(self):
+        yield Static("[bold]📝 Preview[/bold]", classes="panel-title")
+        yield Static("Select a note to preview", id="preview-content")
+
+    def show_note(self, path: str) -> None:
+        """Load and display note content from the given path."""
+        preview = self.query_one("#preview-content", Static)
+        try:
+            content = open(path).read()
+            # Show first 500 chars
+            preview_text = content[:500]
+            if len(content) > 500:
+                preview_text += "\n..."
+            preview.update(preview_text)
+        except Exception:
+            preview.update("[red]Cannot read note[/red]")
+
+    def clear(self) -> None:
+        self.query_one("#preview-content", Static).update(
+            "Select a note to preview"
+        )
 
 
 class ReferencedNotesPanel(Vertical):
@@ -54,11 +83,16 @@ class SearchPanel(Vertical):
 
 
 class Sidebar(Container):
-    """Sidebar with referenced notes and search panels."""
+    """Sidebar with referenced notes, search, and preview panels."""
+
+    def __init__(self, on_preview: callable | None = None):
+        super().__init__()
+        self._on_preview = on_preview
 
     def compose(self):
         yield ReferencedNotesPanel()
         yield SearchPanel()
+        yield NotePreview()
 
     @property
     def notes_panel(self) -> ReferencedNotesPanel:
@@ -67,3 +101,7 @@ class Sidebar(Container):
     @property
     def search_panel(self) -> SearchPanel:
         return self.query_one(SearchPanel)
+
+    @property
+    def preview(self) -> NotePreview:
+        return self.query_one(NotePreview)
