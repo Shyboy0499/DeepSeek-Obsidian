@@ -326,6 +326,10 @@ class DeepSeekTuiApp(App):
             handler=self._cmd_new,
         ))
         registry.register(Command(
+            name="backlinks", description="Show notes linking to a note",
+            handler=self._cmd_backlinks,
+        ))
+        registry.register(Command(
             name="vault", description="Switch to a different vault",
             handler=self._cmd_vault,
         ))
@@ -480,6 +484,20 @@ class DeepSeekTuiApp(App):
         )
         self.vault.refresh()
         return f"Created: [[{title}]]"
+
+    def _cmd_backlinks(self, args: str) -> str:
+        if not self.vault:
+            return "No vault loaded. Use /vault <path> to open one."
+        title = args.strip().strip("[[").strip("]]")
+        if not title:
+            return "Usage: /backlinks [[Note Title]] or /backlinks Note Title"
+        backlinks = self.vault.backlinks(title)
+        if not backlinks:
+            return f"No notes link to \"{title}\"."
+        result = f"{len(backlinks)} note(s) link to [[{title}]]:"
+        for n in backlinks:
+            result += f"\n  • [[{n.title}]]"
+        return result
 
     def _cmd_vault(self, args: str) -> str:
         arg = args.strip()
