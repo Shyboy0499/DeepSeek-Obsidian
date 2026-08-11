@@ -121,6 +121,56 @@ class MainScreen(Screen):
 
                 asyncio.create_task(self._send_to_ai(text))
 
+    def on_key(self, event) -> None:
+        """Handle Tab in chat input for autocomplete."""
+        if event.key != "tab":
+            return
+        chat_input = self.query_one("#chat-input")
+        if chat_input.has_focus:
+            text = chat_input.value
+            completed = self._autocomplete(text)
+            if completed != text:
+                chat_input.value = completed
+                chat_input.cursor_position = len(completed)
+                event.prevent_default()
+
+    def _autocomplete(self, text: str) -> str:
+        """Autocomplete commands (/sea→/search) and wikilinks ([[not→[[Note Title]])."""
+        # Command autocomplete
+        if text.startswith("/"):
+            partial = text[1:].lower()
+            if self._app._command_registry:
+                matches = [
+                    c.name for c in self._app._command_registry.list_commands()
+                    if c.name.startswith(partial)
+                ]
+                if len(matches) == 1:
+                    return f"/{matches[0]} "
+                elif len(matches) > 1:
+                    return f"/{matches[0]}"  # Complete to first match
+
+        # Wikilink autocomplete
+        if "[[" in text:
+            idx = text.rfind("[[") + 2
+            partial = text[idx:].lower()
+            if self._app.vault:
+                matches = [
+                    n.title for n in self._app.vault.notes
+                    if n.title.lower().startswith(partial)
+                ][:10]
+                if len(matches) == 1:
+                    return f"{text[:idx]}{matches[0]}]] "
+                elif len(matches) > 1:
+                    # Complete to longest common prefix
+                    prefix = matches[0]
+                    for m in matches[1:]:
+                        while not m.lower().startswith(prefix.lower()):
+                            prefix = prefix[:-1]
+                    if len(prefix) > len(partial):
+                        return f"{text[:idx]}{prefix}"
+
+        return text
+
     def _handle_command(self, cmd_name: str, cmd_args: str, raw_text: str) -> None:
         """Execute a slash command and show the result in chat."""
         try:
