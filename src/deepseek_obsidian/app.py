@@ -553,19 +553,31 @@ class DeepSeekTuiApp(App):
         return f"Not a valid Obsidian vault (no .obsidian/ folder): {path}"
 
     def _cmd_export(self, args: str) -> str:
+        import json
+        fmt = "md"
+        output = args.strip()
+        if output.startswith("--json"):
+            fmt = "json"
+            output = output.removeprefix("--json").strip()
         path = (
-            Path(args.strip()).expanduser() if args.strip()
-            else Path.home() / "deepseek-chat-export.md"
+            Path(output).expanduser() if output
+            else Path.home() / f"deepseek-obsidian-export.{fmt}"
         )
         screen = self.screen
         if isinstance(screen, MainScreen):
-            lines = []
             from deepseek_obsidian.tui.widgets.chat import ChatMessage
+            messages = []
             for child in screen.chat_view.children:
                 if isinstance(child, ChatMessage):
-                    lines.append(f"## {child.role}\n\n{child.text}\n")
-            path.write_text("\n---\n".join(lines))
-            return f"Chat exported to {path}"
+                    messages.append({"role": child.role, "content": child.text})
+            if not messages:
+                return "Nothing to export."
+            if fmt == "json":
+                path.write_text(json.dumps(messages, indent=2))
+            else:
+                md_lines = [f"## {m['role']}\n\n{m['content']}\n" for m in messages]
+                path.write_text("\n---\n".join(md_lines))
+            return f"Exported {len(messages)} messages to {path}"
         return "Nothing to export. Chat with the AI first, then use /export."
 
     def _cmd_clear(self, args: str) -> str:
