@@ -330,6 +330,10 @@ class DeepSeekTuiApp(App):
             handler=self._cmd_backlinks,
         ))
         registry.register(Command(
+            name="tags", description="List tags or filter by tag",
+            handler=self._cmd_tags,
+        ))
+        registry.register(Command(
             name="vault", description="Switch to a different vault",
             handler=self._cmd_vault,
         ))
@@ -484,6 +488,30 @@ class DeepSeekTuiApp(App):
         )
         self.vault.refresh()
         return f"Created: [[{title}]]"
+
+    def _cmd_tags(self, args: str) -> str:
+        if not self.vault:
+            return "No vault loaded."
+        tag_filter = args.strip()
+        if tag_filter:
+            matches = [n for n in self.vault.notes if tag_filter in n.tags]
+            if not matches:
+                return f"No notes with tag \"{tag_filter}\"."
+            result = f"Notes tagged \"{tag_filter}\" ({len(matches)}):"
+            for n in matches[:20]:
+                result += f"\n  • [[{n.title}]]"
+            return result
+        # List all tags
+        all_tags: dict[str, int] = {}
+        for n in self.vault.notes:
+            for t in n.tags:
+                all_tags[t] = all_tags.get(t, 0) + 1
+        if not all_tags:
+            return "No tags found in vault. Add frontmatter tags to notes."
+        result = f"Tags ({len(all_tags)}):"
+        for tag, count in sorted(all_tags.items()):
+            result += f"\n  {tag} ({count})"
+        return result
 
     def _cmd_backlinks(self, args: str) -> str:
         if not self.vault:
