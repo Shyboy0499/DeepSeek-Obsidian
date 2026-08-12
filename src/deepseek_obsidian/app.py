@@ -393,14 +393,64 @@ class DeepSeekTuiApp(App):
             )
 
     def _cmd_search(self, args: str) -> str:
-        if not self.vault or not args:
-            return "No vault loaded. Use /vault <path> to open one, or restart with --vault PATH."
-        results = self.vault.search_full_text(args)
+        if not self.vault:
+            return "No vault loaded."
+
+        tag_filter = ""
+        from_date = ""
+        to_date = ""
+        query = args
+
+        # Parse flags: --tag, --from, --to
+        parts = args.split()
+        i = 0
+        query_parts = []
+        while i < len(parts):
+            if parts[i] == "--tag" and i + 1 < len(parts):
+                tag_filter = parts[i + 1]
+                i += 2
+            elif parts[i] == "--from" and i + 1 < len(parts):
+                from_date = parts[i + 1]
+                i += 2
+            elif parts[i] == "--to" and i + 1 < len(parts):
+                to_date = parts[i + 1]
+                i += 2
+            else:
+                query_parts.append(parts[i])
+                i += 1
+        query = " ".join(query_parts)
+
+        # Start with full-text results or all notes
+        if query:
+            results = self.vault.search_full_text(query)
+        else:
+            results = list(self.vault.notes)
+
+        # Filter by tag
+        if tag_filter:
+            results = [n for n in results if tag_filter in n.tags]
+
+        # Filter by date range (title contains date-like patterns)
+        if from_date:
+            results = [n for n in results if n.title >= from_date]
+        if to_date:
+            results = [n for n in results if n.title <= to_date]
+
         screen = self.screen
         if isinstance(screen, MainScreen):
             notes_data = [(n.title, str(n.path)) for n in results[:20]]
             screen.sidebar.search_panel.set_results(notes_data)
-        return f"Found {len(results)} notes matching '{args}'."
+
+        filters = []
+        if tag_filter:
+            filters.append(f"tag={tag_filter}")
+        if from_date:
+            filters.append(f"from={from_date}")
+        if to_date:
+            filters.append(f"to={to_date}")
+        filter_str = f" ({', '.join(filters)})" if filters else ""
+        q_str = f"'{query}'" if query else "all notes"
+        return f"Found {len(results)} notes matching {q_str}{filter_str}."
 
     def _cmd_open(self, args: str) -> str:
         if not self.vault or not args:
