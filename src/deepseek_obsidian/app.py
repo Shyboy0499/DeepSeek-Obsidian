@@ -154,10 +154,7 @@ class DeepSeekTuiApp(App):
 
         candidates = self._find_vaults()
         if len(candidates) == 0:
-            self._notify(
-                "No Obsidian vault found.\n"
-                "Use /vault <path> to open one, or restart with --vault PATH."
-            )
+            self._show_setup_guide()
         elif len(candidates) == 1:
             self._load_vault(candidates[0])
         else:
@@ -169,6 +166,24 @@ class DeepSeekTuiApp(App):
             for i, path in enumerate(candidates, 1):
                 lines.append(f"  [{i}] {path}")
             self._notify("\n".join(lines))
+
+    def _show_setup_guide(self) -> None:
+        no_key = not self.config.api_key
+        provider = self.config.provider.upper()
+        guide = ["Welcome to DeepSeek-Obsidian! 🚀", ""]
+        guide.append("To get started:")
+        guide.append(
+            f"  1. Set your API key: export {provider}_API_KEY=\"sk-...\""
+        )
+        guide.append("  2. Connect a vault: /vault /path/to/vault")
+        guide.append("  3. Try: /search to find notes, then ask the AI")
+        guide.append("")
+        if no_key:
+            guide.append(
+                f"⚠️  No {provider}_API_KEY set — AI won't respond."
+            )
+        guide.append("Type /help for all commands.")
+        self._notify("\n".join(guide))
 
     def _find_vaults(self) -> list[Path]:
         search_dirs = [
