@@ -22,4 +22,13 @@ DEFAULTS: dict[str, dict[str, Any]] = {
         "permission_default": "ask",
         "sidebar_width": 35,
     },
+    "keybindings": {
+        "cycle_permission": "tab",
+        "focus_sidebar": "ctrl+n",
+        "focus_chat": "ctrl+l",
+        "quick_search": "ctrl+s",
+        "toggle_sidebar": "ctrl+b",
+        "undo": "ctrl+z",
+        "quit": "ctrl+q",
+    },
 }

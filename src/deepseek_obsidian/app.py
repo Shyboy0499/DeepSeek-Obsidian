@@ -94,19 +94,10 @@ class DeepSeekTuiApp(App):
     }
     """
 
-    BINDINGS = [
-        ("tab", "cycle_permission", "Cycle Permission"),
-        ("ctrl+n", "focus_sidebar", "Focus Sidebar"),
-        ("ctrl+l", "focus_chat", "Focus Chat"),
-        ("ctrl+s", "quick_search", "Quick Search"),
-        ("ctrl+b", "toggle_sidebar", "Toggle Sidebar"),
-        ("ctrl+z", "undo", "Undo"),
-        ("ctrl+q", "quit", "Quit"),
-    ]
-
     def __init__(self, cli_vault: str | None = None):
         super().__init__()
         self.config = load_config()
+        self.BINDINGS = self._build_bindings()
         self.permissions = Permissions(
             level=PermissionLevel.from_string(self.config.permission_default)
         )
@@ -116,6 +107,28 @@ class DeepSeekTuiApp(App):
         self._cli_vault = cli_vault
         self._vault_candidates: list[Path] = []
         self._detect_terminal_theme()
+
+    def _build_bindings(self) -> list[tuple[str, str, str]]:
+        kb = self.config.keybindings or {}
+        labels = {
+            "cycle_permission": "Cycle Permission",
+            "focus_sidebar": "Focus Sidebar",
+            "focus_chat": "Focus Chat",
+            "quick_search": "Quick Search",
+            "toggle_sidebar": "Toggle Sidebar",
+            "undo": "Undo",
+            "quit": "Quit",
+        }
+        defaults = [
+            ("cycle_permission", "tab"),
+            ("focus_sidebar", "ctrl+n"),
+            ("focus_chat", "ctrl+l"),
+            ("quick_search", "ctrl+s"),
+            ("toggle_sidebar", "ctrl+b"),
+            ("undo", "ctrl+z"),
+            ("quit", "ctrl+q"),
+        ]
+        return [(kb.get(k, d), k, labels[k]) for k, d in defaults]
 
     def on_mount(self) -> None:
         self._command_registry = self._build_command_registry()
