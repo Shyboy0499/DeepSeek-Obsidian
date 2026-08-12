@@ -141,7 +141,7 @@ class DeepSeekTuiApp(App):
 
         candidates = self._find_vaults()
         if len(candidates) == 0:
-            self._notify_chat(
+            self._notify(
                 "No Obsidian vault found.\n"
                 "Use /vault <path> to open one, or restart with --vault PATH."
             )
@@ -155,7 +155,7 @@ class DeepSeekTuiApp(App):
             self._vault_candidates = candidates
             for i, path in enumerate(candidates, 1):
                 lines.append(f"  [{i}] {path}")
-            self._notify_chat("\n".join(lines))
+            self._notify("\n".join(lines))
 
     def _find_vaults(self) -> list[Path]:
         search_dirs = [
@@ -193,16 +193,20 @@ class DeepSeekTuiApp(App):
         if bg_val >= 7:
             self.theme = "textual-light"
 
-    def _notify_chat(self, message: str) -> None:
-        screen = self.screen
-        if isinstance(screen, MainScreen):
-            screen.chat_view.start_assistant_message()
-            screen.chat_view.stream_chunk(f"⚙️ {message}")
-            screen.chat_view.finish_assistant_message()
+    def _notify(self, message: str, severity: str = "information") -> None:
+        """Show a toast notification (preferred) or fall back to chat message."""
+        try:
+            self.notify(message, severity=severity)
+        except Exception:
+            screen = self.screen
+            if isinstance(screen, MainScreen):
+                screen.chat_view.start_assistant_message()
+                screen.chat_view.stream_chunk(f"⚙️ {message}")
+                screen.chat_view.finish_assistant_message()
 
     def _load_vault(self, path: Path) -> None:
         def _on_vault_change() -> None:
-            self._notify_chat("📁 Vault changed — index refreshed.")
+            self._notify("📁 Vault changed — index refreshed.")
 
         if self.vault:
             self.vault.stop_watcher()
@@ -242,7 +246,7 @@ class DeepSeekTuiApp(App):
         lines.append(
             "Try /search to find notes, /help for all commands."
         )
-        self._notify_chat("\n".join(lines))
+        self._notify("\n".join(lines))
 
     def action_cycle_permission(self) -> None:
         new_level = self.permissions.cycle()
@@ -273,7 +277,7 @@ class DeepSeekTuiApp(App):
     def action_undo(self) -> None:
         entry = self.permissions.audit_trail.pop_last_write()
         if entry is None:
-            self._notify_chat("Nothing to undo.")
+            self._notify("Nothing to undo.")
             return
 
         target = Path(entry.target)
@@ -281,13 +285,13 @@ class DeepSeekTuiApp(App):
             # Undo a file creation — delete the file
             if target.exists():
                 target.unlink()
-                self._notify_chat(f"Undo: deleted {target.name}")
+                self._notify(f"Undo: deleted {target.name}")
         elif entry.previous_content:
             # Undo a modification — restore previous content
             target.write_text(entry.previous_content)
-            self._notify_chat(f"Undo: restored {target.name}")
+            self._notify(f"Undo: restored {target.name}")
         else:
-            self._notify_chat(f"Cannot undo: no previous state saved for {target.name}")
+            self._notify(f"Cannot undo: no previous state saved for {target.name}")
 
         # Persist the updated audit trail
         self.permissions._save_audit()
