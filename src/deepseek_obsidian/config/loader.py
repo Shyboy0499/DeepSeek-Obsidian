@@ -28,6 +28,7 @@ class Config:
     permission_default: str
     sidebar_width: int
     api_key: str | None
+    keybindings: dict[str, str] | None = None
 
 
 def _deep_merge(base: dict[str, Any], override: dict[str, Any]) -> dict[str, Any]:
@@ -81,4 +82,5 @@ def load_config(config_path: Path | None = None) -> Config:
         permission_default=cfg["tui"]["permission_default"],
         sidebar_width=cfg["tui"]["sidebar_width"],
         api_key=_read_api_key(cfg),
+        keybindings=cfg.get("keybindings", {}),
     )
