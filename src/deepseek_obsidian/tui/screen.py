@@ -4,7 +4,7 @@ import re
 
 from textual.containers import Container
 from textual.screen import Screen
-from textual.widgets import ListView
+from textual.widgets import Input, ListView
 
 from deepseek_obsidian.engine.ai_client import Message
 from deepseek_obsidian.tui.commands import parse_command
@@ -125,7 +125,7 @@ class MainScreen(Screen):
         """Handle Tab in chat input for autocomplete."""
         if event.key != "tab":
             return
-        chat_input = self.query_one("#chat-input")
+        chat_input = self.query_one("#chat-input", Input)
         if chat_input.has_focus:
             text = chat_input.value
             completed = self._autocomplete(text)

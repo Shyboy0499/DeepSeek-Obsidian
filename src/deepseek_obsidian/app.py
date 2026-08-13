@@ -97,7 +97,7 @@ class DeepSeekTuiApp(App):
     def __init__(self, cli_vault: str | None = None):
         super().__init__()
         self.config = load_config()
-        self.BINDINGS = self._build_bindings()
+        self.BINDINGS = self._build_bindings()  # type: ignore
         self.permissions = Permissions(
             level=PermissionLevel.from_string(self.config.permission_default)
         )
@@ -224,7 +224,7 @@ class DeepSeekTuiApp(App):
     def _notify(self, message: str, severity: str = "information") -> None:
         """Show a toast notification (preferred) or fall back to chat message."""
         try:
-            self.notify(message, severity=severity)
+            self.notify(message, severity=severity)  # type: ignore[arg-type]
         except Exception:
             screen = self.screen
             if isinstance(screen, MainScreen):
