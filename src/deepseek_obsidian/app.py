@@ -362,6 +362,10 @@ class DeepSeekTuiApp(App):
             handler=self._cmd_backlinks,
         ))
         registry.register(Command(
+            name="graph", description="Visualize note connections",
+            handler=self._cmd_graph,
+        ))
+        registry.register(Command(
             name="tags", description="List tags or filter by tag",
             handler=self._cmd_tags,
         ))
@@ -594,6 +598,13 @@ class DeepSeekTuiApp(App):
         for tag, count in sorted(all_tags.items()):
             result += f"\n  {tag} ({count})"
         return result
+
+    def _cmd_graph(self, args: str) -> str | None:
+        if not self.vault:
+            return "No vault loaded. Use /vault <path> to open one."
+        from deepseek_obsidian.tui.screens.graph import GraphScreen
+        self.push_screen(GraphScreen(self.vault))
+        return None
 
     def _cmd_backlinks(self, args: str) -> str:
         if not self.vault:
