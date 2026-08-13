@@ -366,6 +366,10 @@ class DeepSeekTuiApp(App):
             handler=self._cmd_graph,
         ))
         registry.register(Command(
+            name="config", description="Edit settings interactively",
+            handler=self._cmd_config,
+        ))
+        registry.register(Command(
             name="tags", description="List tags or filter by tag",
             handler=self._cmd_tags,
         ))
@@ -598,6 +602,11 @@ class DeepSeekTuiApp(App):
         for tag, count in sorted(all_tags.items()):
             result += f"\n  {tag} ({count})"
         return result
+
+    def _cmd_config(self, args: str) -> str | None:
+        from deepseek_obsidian.tui.screens.config import ConfigScreen
+        self.push_screen(ConfigScreen(self.config))
+        return None
 
     def _cmd_graph(self, args: str) -> str | None:
         if not self.vault:
