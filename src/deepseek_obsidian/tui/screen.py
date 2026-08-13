@@ -110,6 +110,14 @@ class MainScreen(Screen):
             return
         event.input.value = ""
 
+        # Shell command passthrough (! prefix)
+        if text.startswith("!"):
+            self.chat_view.add_user_message(text)
+            import asyncio
+
+            asyncio.create_task(self._run_shell(text[1:].strip()))
+            return
+
         cmd_name, cmd_args = parse_command(text)
 
         if cmd_name:
@@ -120,6 +128,35 @@ class MainScreen(Screen):
                 import asyncio
 
                 asyncio.create_task(self._send_to_ai(text))
+
+    async def _run_shell(self, command: str) -> None:
+        """Run a shell command and show output in chat."""
+        if not command:
+            return
+        self.chat_view.start_assistant_message()
+        self.chat_view.stream_chunk(f"[dim]⚙️ $ {command}[/dim]\n")
+        try:
+            import asyncio
+
+            proc = await asyncio.create_subprocess_shell(
+                command,
+                stdout=asyncio.subprocess.PIPE,
+                stderr=asyncio.subprocess.PIPE,
+            )
+            stdout, stderr = await proc.communicate()
+            if stdout:
+                self.chat_view.stream_chunk(stdout.decode(errors="replace"))
+            if stderr:
+                self.chat_view.stream_chunk(
+                    f"[yellow]{stderr.decode(errors='replace')}[/yellow]"
+                )
+            if proc.returncode != 0:
+                self.chat_view.stream_chunk(
+                    f"\n[red]Exit code: {proc.returncode}[/red]"
+                )
+        except Exception as e:
+            self.chat_view.stream_chunk(f"[red]Error: {e}[/red]")
+        self.chat_view.finish_assistant_message()
 
     def on_key(self, event) -> None:
         """Handle Tab in chat input for autocomplete."""
