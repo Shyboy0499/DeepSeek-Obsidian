@@ -101,12 +101,21 @@ class DeepSeekTuiApp(App):
         self.permissions = Permissions(
             level=PermissionLevel.from_string(self.config.permission_default)
         )
-        self.vault: VaultReader | None = None
+        self._vaults: list[VaultReader] = []
         self.ai_client: AIClient | None = None
         self.context_builder: ContextBuilder | None = None
         self._cli_vault = cli_vault
         self._vault_candidates: list[Path] = []
         self._detect_terminal_theme()
+
+    @property
+    def vault(self) -> VaultReader | None:
+        """Primary vault (first loaded)."""
+        return self._vaults[0] if self._vaults else None
+
+    @property
+    def vaults(self) -> list[VaultReader]:
+        return self._vaults
 
     def _build_bindings(self) -> list[tuple[str, str, str]]:
         kb = self.config.keybindings or {}
@@ -232,33 +241,42 @@ class DeepSeekTuiApp(App):
                 screen.chat_view.stream_chunk(f"⚙️ {message}")
                 screen.chat_view.finish_assistant_message()
 
-    def _load_vault(self, path: Path) -> None:
+    def _load_vault(self, path: Path, add: bool = False) -> None:
         def _on_vault_change() -> None:
             self._notify("📁 Vault changed — index refreshed.")
 
-        if self.vault:
-            self.vault.stop_watcher()
+        if not add:
+            for v in self._vaults:
+                v.stop_watcher()
+            self._vaults.clear()
 
-        self.vault = VaultReader(
+        vault = VaultReader(
             path,
             exclude_dirs=self.config.exclude_dirs,
             on_change=_on_vault_change,
         )
-        if self.vault:
+        self._vaults.append(vault)
+        if not add:
             session_path = (
                 Path.home() / ".config" / "deepseek-obsidian" / "sessions"
-                / f"{self.vault.vault_path.name}.json"
+                / f"{vault.vault_path.name}.json"
             )
             self.context_builder = ContextBuilder(
-                self.vault, max_notes=self.config.max_notes,
+                vault, max_notes=self.config.max_notes,
                 session_path=session_path,
             )
             if self.config.incremental_index:
                 import asyncio
-                asyncio.create_task(self.vault.start_watcher())
-        note_count = len(self.vault.notes)
+                asyncio.create_task(vault.start_watcher())
+        total = sum(len(v.notes) for v in self._vaults)
+        if add:
+            self._notify(
+                f"📁 Added vault: {path.name} ({len(vault.notes)} notes). "
+                f"Total: {len(self._vaults)} vaults, {total} notes."
+            )
+            return
         lines = [
-            f"📁 Vault connected: {path.name} ({note_count} notes)",
+            f"📁 Vault connected: {path.name} ({len(vault.notes)} notes)",
         ]
         if self.context_builder and self.context_builder.restored_count:
             lines.append(
@@ -433,7 +451,7 @@ class DeepSeekTuiApp(App):
             )
 
     def _cmd_search(self, args: str) -> str:
-        if not self.vault:
+        if not self._vaults:
             return "No vault loaded."
 
         tag_filter = ""
@@ -460,11 +478,19 @@ class DeepSeekTuiApp(App):
                 i += 1
         query = " ".join(query_parts)
 
-        # Start with full-text results or all notes
+        # Start with full-text results or all notes (first vault)
+        primary = self._vaults[0]
         if query:
-            results = self.vault.search_full_text(query)
+            results = primary.search_full_text(query)
         else:
-            results = list(self.vault.notes)
+            results = list(primary.notes)
+
+        # Search across all additional vaults too
+        for v in self._vaults[1:]:
+            if query:
+                results.extend(v.search_full_text(query))
+            else:
+                results.extend(v.notes)
 
         # Filter by tag
         if tag_filter:
@@ -631,6 +657,24 @@ class DeepSeekTuiApp(App):
 
     def _cmd_vault(self, args: str) -> str:
         arg = args.strip()
+
+        # List loaded vaults
+        if arg == "list" or arg == "":
+            if not self._vaults:
+                return "No vaults loaded. Use /vault <path> to open one."
+            result = f"{len(self._vaults)} vault(s) loaded:"
+            for i, v in enumerate(self._vaults, 1):
+                result += f"\n  [{i}] {v.vault_path.name} ({len(v.notes)} notes)"
+            return result
+
+        # Add a vault
+        if arg.startswith("add "):
+            path = Path(arg[4:].strip()).expanduser()
+            if path.exists() and (path / ".obsidian").exists():
+                self._load_vault(path, add=True)
+                return f"Added vault: {path.name}"
+            return f"Not a valid Obsidian vault: {path}"
+
         # Try numeric index into candidates list
         if arg.isdigit() and self._vault_candidates:
             idx = int(arg) - 1
