@@ -1,5 +1,7 @@
 """Sidebar widget — referenced notes panel, search results, and note preview."""
 
+from collections.abc import Callable
+
 from textual.containers import Container, Vertical
 from textual.widgets import Input, ListItem, ListView, Static
 
@@ -85,7 +87,7 @@ class SearchPanel(Vertical):
 class Sidebar(Container):
     """Sidebar with referenced notes, search, and preview panels."""
 
-    def __init__(self, on_preview: callable | None = None):
+    def __init__(self, on_preview: Callable[[str], None] | None = None):
         super().__init__()
         self._on_preview = on_preview
 
