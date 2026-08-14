@@ -7,7 +7,7 @@ from pathlib import Path
 
 from textual.app import App
 
-from deepseek_obsidian.config.loader import load_config
+from deepseek_obsidian.config.loader import load_config, save_vault_path
 from deepseek_obsidian.engine.ai_client import AIClient, create_client
 from deepseek_obsidian.engine.context import ContextBuilder
 from deepseek_obsidian.engine.permissions import PermissionLevel, Permissions
@@ -257,6 +257,7 @@ class DeepSeekTuiApp(App):
         )
         self._vaults.append(vault)
         if not add:
+            save_vault_path(str(path))
             session_path = (
                 Path.home() / ".config" / "deepseek-obsidian" / "sessions"
                 / f"{vault.vault_path.name}.json"
