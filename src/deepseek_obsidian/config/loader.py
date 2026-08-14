@@ -14,6 +14,37 @@ CONFIG_DIR = Path.home() / ".config" / "deepseek-obsidian"
 CONFIG_PATH = CONFIG_DIR / "config.toml"
 
 
+def save_vault_path(path: str) -> None:
+    """Persist the chosen vault path to config.toml."""
+    try:
+        CONFIG_DIR.mkdir(parents=True, exist_ok=True)
+        if CONFIG_PATH.exists():
+            data = tomllib.loads(CONFIG_PATH.read_text())
+        else:
+            data = {}
+        data.setdefault("vault", {})["path"] = path
+        lines = []
+        if "vault" in data:
+            lines.append("[vault]")
+            for k, v in data["vault"].items():
+                lines.append(f'{k} = "{v}"')
+        # Preserve other sections minimally
+        for section in data:
+            if section == "vault":
+                continue
+            lines.append(f"[{section}]")
+            for k, v in data[section].items():
+                if isinstance(v, list):
+                    lines.append(f"{k} = {v}")
+                elif isinstance(v, str):
+                    lines.append(f'{k} = "{v}"')
+                else:
+                    lines.append(f"{k} = {v}")
+        CONFIG_PATH.write_text("\n".join(lines) + "\n")
+    except Exception:
+        pass
+
+
 @dataclass
 class Config:
     vault_path: Path | None
