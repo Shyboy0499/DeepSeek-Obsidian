@@ -389,6 +389,10 @@ class DeepSeekTuiApp(App):
             handler=self._cmd_config,
         ))
         registry.register(Command(
+            name="read", description="Read a full note",
+            handler=self._cmd_read,
+        ))
+        registry.register(Command(
             name="tags", description="List tags or filter by tag",
             handler=self._cmd_tags,
         ))
@@ -629,6 +633,20 @@ class DeepSeekTuiApp(App):
         for tag, count in sorted(all_tags.items()):
             result += f"\n  {tag} ({count})"
         return result
+
+    def _cmd_read(self, args: str) -> str | None:
+        if not self._vaults:
+            return "No vault loaded."
+        title = args.strip().strip("[[").strip("]]")
+        if not title:
+            return "Usage: /read Note Title"
+        for vault in self._vaults:
+            note = vault.resolve_wikilink(title)
+            if note:
+                from deepseek_obsidian.tui.screens.reader import NoteReaderScreen
+                self.push_screen(NoteReaderScreen(note))
+                return None
+        return f"Note not found: \"{title}\""
 
     def _cmd_config(self, args: str) -> str | None:
         from deepseek_obsidian.tui.screens.config import ConfigScreen
