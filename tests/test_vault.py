@@ -2,7 +2,7 @@
 
 from pathlib import Path
 
-from deepseek_obsidian.engine.vault import Note, VaultReader, scan_vault
+from deepseek_obsidian.engine.vault import Note, VaultReader, scan_vault, update_tags
 
 
 class TestNote:
@@ -86,3 +86,27 @@ class TestScanVault:
         note = vault.resolve_wikilink("neural networks")
         assert note is not None
         assert note.title == "Neural Networks"
+
+
+class TestUpdateTags:
+    def test_add_tag(self, temp_vault):
+        vault = VaultReader(temp_vault)
+        note = vault.resolve_wikilink("machine learning basics")
+        assert note is not None
+        update_tags(note, add=["newtag"])
+        assert "newtag" in note.tags
+
+    def test_remove_tag(self, temp_vault):
+        vault = VaultReader(temp_vault)
+        note = vault.resolve_wikilink("machine learning basics")
+        assert note is not None
+        assert "ml" in note.tags
+        update_tags(note, remove=["ml"])
+        assert "ml" not in note.tags
+
+    def test_add_and_remove_together(self, temp_vault):
+        vault = VaultReader(temp_vault)
+        note = vault.resolve_wikilink("machine learning basics")
+        update_tags(note, add=["x"], remove=["ml"])
+        assert "x" in note.tags
+        assert "ml" not in note.tags

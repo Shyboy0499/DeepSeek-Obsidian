@@ -59,6 +59,32 @@ def _parse_metadata(path: Path, content: str) -> tuple[str, list[str]]:
     return title, tags
 
 
+def update_tags(note: Note, add: list[str] | None = None, remove: list[str] | None = None) -> None:
+    """Add and/or remove frontmatter tags on a note, writing back to disk."""
+    add = add or []
+    remove = remove or []
+    try:
+        post = frontmatter.loads(note.content)
+    except Exception:
+        post = frontmatter.Post("")
+    tags = post.get("tags", [])
+    if isinstance(tags, str):
+        tags = [tags]
+    elif not isinstance(tags, list):
+        tags = []
+    tags = [str(t) for t in tags]
+    for t in remove:
+        if t in tags:
+            tags.remove(t)
+    for t in add:
+        if t not in tags:
+            tags.append(t)
+    post["tags"] = tags
+    note.path.write_text(frontmatter.dumps(post))
+    note.content = note.path.read_text(encoding="utf-8")
+    note.tags = tags
+
+
 def scan_vault(vault_path: Path, exclude_dirs: list[str] | None = None) -> list[Note]:
     """Scan an Obsidian vault directory for all .md files, returning Note objects."""
     exclude_set = set(exclude_dirs or [])
