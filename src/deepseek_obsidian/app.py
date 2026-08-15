@@ -409,6 +409,10 @@ class DeepSeekTuiApp(App):
             handler=self._cmd_tag,
         ))
         registry.register(Command(
+            name="stats", description="Vault health statistics",
+            handler=self._cmd_stats,
+        ))
+        registry.register(Command(
             name="tags", description="List tags or filter by tag",
             handler=self._cmd_tags,
         ))
@@ -735,6 +739,44 @@ class DeepSeekTuiApp(App):
         )
         self.vault.refresh()
         return f"{action.capitalize()}ed tag '{tag}' on [[{title}]]"
+
+    def _cmd_stats(self, args: str) -> str:
+        if not self._vaults:
+            return "No vault loaded."
+        lines = []
+        total_notes = 0
+        total_links = 0
+        broken = 0
+        all_tags: set[str] = set()
+        for v in self._vaults:
+            total_notes += len(v.notes)
+            for n in v.notes:
+                links = n.wikilinks()
+                total_links += len(links)
+                for link in links:
+                    if v.resolve_wikilink(link) is None:
+                        broken += 1
+                all_tags.update(n.tags)
+        lines.append(f"📊 Vault statistics ({len(self._vaults)} vault(s))")
+        lines.append(f"  Notes: {total_notes}")
+        lines.append(f"  Wikilinks: {total_links}")
+        lines.append(f"  Broken links: {broken}")
+        lines.append(f"  Tags: {len(all_tags)}")
+        # Most-linked notes
+        from deepseek_obsidian.engine.graph import build_graph
+        for v in self._vaults:
+            graph = build_graph(v)
+            top = sorted(
+                graph.nodes.values(), key=lambda node: -node.degree
+            )[:5]
+            if top:
+                lines.append("  Most connected notes:")
+                for node in top:
+                    if node.degree > 0:
+                        lines.append(
+                            f"    • [[{node.title}]] ({node.degree})"
+                        )
+        return "\n".join(lines)
 
     def _cmd_tags(self, args: str) -> str:
         if not self.vault:
