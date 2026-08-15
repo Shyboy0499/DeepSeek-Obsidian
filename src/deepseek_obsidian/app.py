@@ -393,6 +393,18 @@ class DeepSeekTuiApp(App):
             handler=self._cmd_read,
         ))
         registry.register(Command(
+            name="edit", description="Edit a note in your editor",
+            handler=self._cmd_edit,
+        ))
+        registry.register(Command(
+            name="delete", description="Delete a note",
+            handler=self._cmd_delete,
+        ))
+        registry.register(Command(
+            name="today", description="Open today's daily note",
+            handler=self._cmd_today,
+        ))
+        registry.register(Command(
             name="tags", description="List tags or filter by tag",
             handler=self._cmd_tags,
         ))
@@ -609,6 +621,84 @@ class DeepSeekTuiApp(App):
         )
         self.vault.refresh()
         return f"Created: [[{title}]]"
+
+    def _cmd_edit(self, args: str) -> str:
+        if not self.vault:
+            return "No vault loaded."
+        title = args.strip().strip("[[").strip("]]")
+        if not title:
+            return "Usage: /edit Note Title"
+        note = self.vault.resolve_wikilink(title)
+        if not note:
+            return f"Note not found: \"{title}\""
+        if not self.permissions.can_write():
+            return (
+                "Cannot edit: permission is 'Ask'. "
+                "Use /perm full or press Tab to cycle."
+            )
+        editor = os.environ.get("EDITOR", os.environ.get("VISUAL", "vim"))
+        import subprocess
+        previous = note.content
+        result = subprocess.run([editor, str(note.path)])
+        if result.returncode != 0:
+            return f"Editor exited with code {result.returncode}."
+        new_content = note.path.read_text(encoding="utf-8")
+        if new_content != previous:
+            self.permissions.record_write(
+                str(note.path), f"Manual edit: {title}",
+                previous_content=previous,
+            )
+            self.vault.refresh()
+            return f"Edited: [[{title}]]"
+        return f"No changes to {title}."
+
+    def _cmd_delete(self, args: str) -> str:
+        if not self.vault:
+            return "No vault loaded."
+        title = args.strip().strip("[[").strip("]]")
+        if not title:
+            return "Usage: /delete Note Title"
+        note = self.vault.resolve_wikilink(title)
+        if not note:
+            return f"Note not found: \"{title}\""
+        if not self.permissions.can_write():
+            return (
+                "Cannot delete: permission is 'Ask'. "
+                "Use /perm full or press Tab to cycle."
+            )
+        previous = note.content
+        note.path.unlink()
+        self.permissions.record_write(
+            str(note.path), f"Deleted note: {title}",
+            previous_content=previous,
+        )
+        self.vault.refresh()
+        return f"Deleted: {title} (undo with Ctrl+Z)"
+
+    def _cmd_today(self, args: str) -> str | None:
+        if not self.vault:
+            return "No vault loaded."
+        import datetime
+        today = datetime.date.today().isoformat()
+        filename = f"{today}.md"
+        filepath = self.vault.vault_path / filename
+        if not filepath.exists():
+            if not self.permissions.can_write():
+                return (
+                    "Cannot create daily note: permission is 'Ask'. "
+                    "Use /perm full."
+                )
+            filepath.write_text(f"# {today}\n\n")
+            self.permissions.record_write(
+                str(filepath), f"Created daily note: {today}",
+                previous_content="__NEW_FILE__",
+            )
+            self.vault.refresh()
+        note = self.vault.resolve_wikilink(today)
+        if note:
+            from deepseek_obsidian.tui.screens.reader import NoteReaderScreen
+            self.push_screen(NoteReaderScreen(note))
+        return None
 
     def _cmd_tags(self, args: str) -> str:
         if not self.vault:
