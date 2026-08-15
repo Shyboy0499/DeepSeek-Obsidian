@@ -405,6 +405,10 @@ class DeepSeekTuiApp(App):
             handler=self._cmd_today,
         ))
         registry.register(Command(
+            name="tag", description="Add/remove tags on a note",
+            handler=self._cmd_tag,
+        ))
+        registry.register(Command(
             name="tags", description="List tags or filter by tag",
             handler=self._cmd_tags,
         ))
@@ -699,6 +703,38 @@ class DeepSeekTuiApp(App):
             from deepseek_obsidian.tui.screens.reader import NoteReaderScreen
             self.push_screen(NoteReaderScreen(note))
         return None
+
+    def _cmd_tag(self, args: str) -> str:
+        if not self.vault:
+            return "No vault loaded."
+        parts = args.split()
+        if len(parts) < 3:
+            return "Usage: /tag add|remove <NoteTitle> <tag>"
+        action = parts[0].lower()
+        tag = parts[-1]
+        title = " ".join(parts[1:-1]).strip().strip("[[").strip("]]")
+        if action not in ("add", "remove"):
+            return "Usage: /tag add|remove <NoteTitle> <tag>"
+        note = self.vault.resolve_wikilink(title)
+        if not note:
+            return f"Note not found: \"{title}\""
+        if not self.permissions.can_write():
+            return (
+                "Cannot modify tags: permission is 'Ask'. "
+                "Use /perm full or press Tab."
+            )
+        from deepseek_obsidian.engine.vault import update_tags
+        previous = note.content
+        if action == "add":
+            update_tags(note, add=[tag])
+        else:
+            update_tags(note, remove=[tag])
+        self.permissions.record_write(
+            str(note.path), f"{action} tag '{tag}' on {title}",
+            previous_content=previous,
+        )
+        self.vault.refresh()
+        return f"{action.capitalize()}ed tag '{tag}' on [[{title}]]"
 
     def _cmd_tags(self, args: str) -> str:
         if not self.vault:
