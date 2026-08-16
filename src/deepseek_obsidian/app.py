@@ -333,6 +333,10 @@ class DeepSeekTuiApp(App):
             if target.exists():
                 target.unlink()
                 self._notify(f"Undo: deleted {target.name}")
+        elif entry.detail.startswith("Deleted"):
+            # Undo a deletion — recreate the file (content may be empty)
+            target.write_text(entry.previous_content)
+            self._notify(f"Undo: restored deleted note {target.name}")
         elif entry.previous_content:
             # Undo a modification — restore previous content
             target.write_text(entry.previous_content)
@@ -583,6 +587,7 @@ class DeepSeekTuiApp(App):
             str(filepath), "Created note from AI response",
             previous_content="__NEW_FILE__",
         )
+        self.vault.refresh()
         return f"Saved to {filename}"
 
     def _cmd_link(self, args: str) -> str:
@@ -605,6 +610,7 @@ class DeepSeekTuiApp(App):
                 f"Added link to [[{to_note}]]",
                 previous_content=prev,
             )
+            self.vault.refresh()
             return f"Linked [[{from_note}]] -> [[{to_note}]]"
         return f"Note not found: \"{from_note}\" — check the title with /search"
 

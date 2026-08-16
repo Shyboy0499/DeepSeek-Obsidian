@@ -15,32 +15,49 @@ CONFIG_PATH = CONFIG_DIR / "config.toml"
 
 
 def save_vault_path(path: str) -> None:
-    """Persist the chosen vault path to config.toml."""
+    """Persist the chosen vault path to config.toml.
+
+    Uses targeted line replacement so other settings (lists, nested values)
+    are preserved exactly as written.
+    """
     try:
         CONFIG_DIR.mkdir(parents=True, exist_ok=True)
-        if CONFIG_PATH.exists():
-            data = tomllib.loads(CONFIG_PATH.read_text())
-        else:
-            data = {}
-        data.setdefault("vault", {})["path"] = path
-        lines = []
-        if "vault" in data:
-            lines.append("[vault]")
-            for k, v in data["vault"].items():
-                lines.append(f'{k} = "{v}"')
-        # Preserve other sections minimally
-        for section in data:
-            if section == "vault":
+        if not CONFIG_PATH.exists():
+            CONFIG_PATH.write_text(f'[vault]\npath = "{path}"\n')
+            return
+
+        lines = CONFIG_PATH.read_text().splitlines()
+        out: list[str] = []
+        in_vault_section = False
+        path_written = False
+        i = 0
+        while i < len(lines):
+            line = lines[i].strip()
+            if line.startswith("[") and line.endswith("]"):
+                in_vault_section = line == "[vault]"
+                out.append(lines[i])
+                i += 1
+                # If entering vault section, insert/update path after header
+                if in_vault_section:
+                    # Skip existing path line
+                    if i < len(lines) and lines[i].strip().startswith("path"):
+                        i += 1
+                    out.append(f'path = "{path}"')
+                    path_written = True
                 continue
-            lines.append(f"[{section}]")
-            for k, v in data[section].items():
-                if isinstance(v, list):
-                    lines.append(f"{k} = {v}")
-                elif isinstance(v, str):
-                    lines.append(f'{k} = "{v}"')
-                else:
-                    lines.append(f"{k} = {v}")
-        CONFIG_PATH.write_text("\n".join(lines) + "\n")
+            # Replace path line within vault section
+            if in_vault_section and line.startswith("path"):
+                out.append(f'path = "{path}"')
+                path_written = True
+                i += 1
+                continue
+            out.append(lines[i])
+            i += 1
+
+        if not path_written:
+            out.append(f'[vault]\npath = "{path}"')
+
+        CONFIG_PATH.write_text("\n".join(out) + "\n")
     except Exception:
         pass
 
