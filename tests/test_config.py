@@ -4,8 +4,9 @@ import os
 import tempfile
 from pathlib import Path
 
+import deepseek_obsidian.config.loader as loader_module
 from deepseek_obsidian.config.defaults import DEFAULTS
-from deepseek_obsidian.config.loader import load_config
+from deepseek_obsidian.config.loader import load_config, save_vault_path
 
 
 class TestDefaults:
@@ -81,3 +82,36 @@ path = "~/Documents/Obsidian/Vault"
         os.unlink(f.name)
 
         assert config.vault_path == Path.home() / "Documents/Obsidian/Vault"
+
+
+class TestSaveVaultPath:
+    def test_preserves_exclude_dirs_list(self, monkeypatch, tmp_path):
+        monkeypatch.setattr(loader_module, "CONFIG_DIR", tmp_path)
+        monkeypatch.setattr(loader_module, "CONFIG_PATH", tmp_path / "config.toml")
+        loader_module.CONFIG_PATH.write_text(
+            '[vault]\nexclude_dirs = [".git", "_templates"]\n\n[model]\nprovider = "deepseek"\n'
+        )
+        save_vault_path("/tmp/my-vault")
+        import tomllib
+        data = tomllib.loads(loader_module.CONFIG_PATH.read_text())
+        assert data["vault"]["exclude_dirs"] == [".git", "_templates"]
+        assert data["vault"]["path"] == "/tmp/my-vault"
+        assert data["model"]["provider"] == "deepseek"
+
+    def test_creates_config_if_missing(self, monkeypatch, tmp_path):
+        monkeypatch.setattr(loader_module, "CONFIG_DIR", tmp_path)
+        monkeypatch.setattr(loader_module, "CONFIG_PATH", tmp_path / "config.toml")
+        save_vault_path("/tmp/v")
+        assert loader_module.CONFIG_PATH.exists()
+        import tomllib
+        data = tomllib.loads(loader_module.CONFIG_PATH.read_text())
+        assert data["vault"]["path"] == "/tmp/v"
+
+    def test_updates_existing_path(self, monkeypatch, tmp_path):
+        monkeypatch.setattr(loader_module, "CONFIG_DIR", tmp_path)
+        monkeypatch.setattr(loader_module, "CONFIG_PATH", tmp_path / "config.toml")
+        loader_module.CONFIG_PATH.write_text('[vault]\npath = "/old"\n')
+        save_vault_path("/new")
+        import tomllib
+        data = tomllib.loads(loader_module.CONFIG_PATH.read_text())
+        assert data["vault"]["path"] == "/new"
