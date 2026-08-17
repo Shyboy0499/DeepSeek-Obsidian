@@ -1,15 +1,15 @@
 """Note reader screen — full-screen scrolling view of a note."""
 
 from textual.app import ComposeResult
-from textual.containers import Container
+from textual.containers import VerticalScroll
 from textual.screen import Screen
-from textual.widgets import Footer, Header, Static
+from textual.widgets import Footer, Header, Markdown, Static
 
 from deepseek_obsidian.engine.vault import Note
 
 
 class NoteReaderScreen(Screen):
-    """Read a full note with scrolling."""
+    """Read a full note with scrolling and markdown rendering."""
 
     BINDINGS = [
         ("escape", "dismiss", "Back"),
@@ -28,6 +28,6 @@ class NoteReaderScreen(Screen):
                 f"[dim]tags: {', '.join(self._note.tags)}[/dim]",
                 id="reader-tags",
             )
-        with Container(id="reader-body"):
-            yield Static(self._note.content, id="reader-content")
+        with VerticalScroll(id="reader-scroll"):
+            yield Markdown(self._note.content, id="reader-content")
         yield Footer()
