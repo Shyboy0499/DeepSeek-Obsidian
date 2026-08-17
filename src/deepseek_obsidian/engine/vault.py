@@ -3,8 +3,10 @@
 from __future__ import annotations
 
 import asyncio
+import math
 import os
 import re
+from collections import Counter
 from collections.abc import Callable
 from dataclasses import dataclass, field
 from pathlib import Path
@@ -12,6 +14,22 @@ from pathlib import Path
 import frontmatter
 
 WIKILINK_PATTERN = re.compile(r"\[\[([^\]]+)\]\]")
+
+# Common English stopwords for better semantic matching
+STOPWORDS = {
+    "a", "an", "the", "and", "or", "but", "if", "then", "else", "of",
+    "to", "in", "on", "at", "by", "for", "with", "about", "is", "are",
+    "was", "were", "be", "been", "being", "this", "that", "these",
+    "those", "it", "its", "as", "from", "into", "than", "not", "no",
+    "so", "do", "does", "did", "have", "has", "had", "i", "you", "he",
+    "she", "we", "they", "them", "his", "her", "their", "my", "your",
+}
+
+
+def _tokenize(text: str) -> list[str]:
+    """Split text into lowercase word tokens, removing stopwords."""
+    words = re.findall(r"[a-z0-9]+", text.lower())
+    return [w for w in words if w not in STOPWORDS and len(w) > 1]
 
 
 @dataclass
@@ -190,3 +208,57 @@ class VaultReader:
                 results.append((score, note))
         results.sort(key=lambda x: x[0], reverse=True)
         return [n for _, n in results]
+
+    def search_semantic(self, query: str, limit: int | None = None) -> list[Note]:
+        """Rank notes by TF-IDF cosine similarity to the query.
+
+        Better than substring matching: finds notes that discuss a topic even
+        when they don't contain the exact query words. Uses a lightweight
+        bag-of-words model with term frequency and inverse document frequency.
+        """
+        query_tokens = _tokenize(query)
+        if not query_tokens:
+            return self.search_full_text(query)
+
+        # Document frequency: how many notes contain each term
+        doc_freq: Counter = Counter()
+        note_tokens: dict[str, list[str]] = {}
+        for note in self._notes:
+            tokens = _tokenize(note.content + " " + note.title)
+            note_tokens[note.title] = tokens
+            doc_freq.update(set(tokens))
+
+        num_notes = max(len(self._notes), 1)
+
+        def idf(term: str) -> float:
+            return math.log((1 + num_notes) / (1 + doc_freq[term])) + 1.0
+
+        # Build query vector
+        q_vec: Counter = Counter(query_tokens)
+        q_norm = math.sqrt(sum((idf(t) * c) ** 2 for t, c in q_vec.items()))
+
+        scored: list[tuple[float, Note]] = []
+        for note in self._notes:
+            tokens = note_tokens[note.title]
+            if not tokens:
+                continue
+            tf = Counter(tokens)
+            # Cosine similarity between query and note term vectors
+            dot = 0.0
+            norm = 0.0
+            for term, count in tf.items():
+                w = idf(term) * count
+                norm += w * w
+                if term in q_vec:
+                    dot += w * (idf(term) * q_vec[term])
+            if norm == 0 or q_norm == 0:
+                continue
+            similarity = dot / (math.sqrt(norm) * q_norm)
+            if similarity > 0:
+                scored.append((similarity, note))
+
+        scored.sort(key=lambda x: x[0], reverse=True)
+        results = [n for _, n in scored]
+        if limit:
+            return results[:limit]
+        return results

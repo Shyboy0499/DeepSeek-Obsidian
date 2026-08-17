@@ -115,3 +115,15 @@ class TestSaveVaultPath:
         import tomllib
         data = tomllib.loads(loader_module.CONFIG_PATH.read_text())
         assert data["vault"]["path"] == "/new"
+
+
+class TestSaveModelConfig:
+    def test_saves_provider_and_model(self, monkeypatch, tmp_path):
+        monkeypatch.setattr(loader_module, "CONFIG_DIR", tmp_path)
+        monkeypatch.setattr(loader_module, "CONFIG_PATH", tmp_path / "config.toml")
+        from deepseek_obsidian.config.loader import save_model_config
+        save_model_config("openai", "gpt-4o")
+        import tomllib
+        data = tomllib.loads(loader_module.CONFIG_PATH.read_text())
+        assert data["model"]["provider"] == "openai"
+        assert data["model"]["model"] == "gpt-4o"
