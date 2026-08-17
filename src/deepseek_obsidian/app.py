@@ -7,7 +7,11 @@ from pathlib import Path
 
 from textual.app import App
 
-from deepseek_obsidian.config.loader import load_config, save_vault_path
+from deepseek_obsidian.config.loader import (
+    load_config,
+    save_model_config,
+    save_vault_path,
+)
 from deepseek_obsidian.engine.ai_client import AIClient, create_client
 from deepseek_obsidian.engine.context import ContextBuilder
 from deepseek_obsidian.engine.permissions import PermissionLevel, Permissions
@@ -469,8 +473,9 @@ class DeepSeekTuiApp(App):
             )
             self.config.provider = provider_name
             self.config.model = chosen_model
+            save_model_config(provider_name, chosen_model)
             return (
-                f"Requested: {provider_name}/{chosen_model}\n"
+                f"Requested: {provider_name}/{chosen_model} (saved)\n"
                 "Actual model confirmed on next message."
             )
         except ValueError:
@@ -486,9 +491,10 @@ class DeepSeekTuiApp(App):
         tag_filter = ""
         from_date = ""
         to_date = ""
+        semantic = False
         query = args
 
-        # Parse flags: --tag, --from, --to
+        # Parse flags: --tag, --from, --to, --semantic
         parts = args.split()
         i = 0
         query_parts = []
@@ -502,22 +508,31 @@ class DeepSeekTuiApp(App):
             elif parts[i] == "--to" and i + 1 < len(parts):
                 to_date = parts[i + 1]
                 i += 2
+            elif parts[i] == "--semantic":
+                semantic = True
+                i += 1
             else:
                 query_parts.append(parts[i])
                 i += 1
         query = " ".join(query_parts)
 
-        # Start with full-text results or all notes (first vault)
+        # Start with results (first vault)
         primary = self._vaults[0]
         if query:
-            results = primary.search_full_text(query)
+            if semantic:
+                results = primary.search_semantic(query)
+            else:
+                results = primary.search_full_text(query)
         else:
             results = list(primary.notes)
 
         # Search across all additional vaults too
         for v in self._vaults[1:]:
             if query:
-                results.extend(v.search_full_text(query))
+                if semantic:
+                    results.extend(v.search_semantic(query))
+                else:
+                    results.extend(v.search_full_text(query))
             else:
                 results.extend(v.notes)
 

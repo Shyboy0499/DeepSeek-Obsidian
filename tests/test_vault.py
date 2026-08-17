@@ -110,3 +110,26 @@ class TestUpdateTags:
         update_tags(note, add=["x"], remove=["ml"])
         assert "x" in note.tags
         assert "ml" not in note.tags
+
+
+class TestSemanticSearch:
+    def test_finds_related_notes_by_word_overlap(self, temp_vault):
+        vault = VaultReader(temp_vault)
+        # note1 content mentions "neural networks" and "deep learning"
+        # Search with reordered/partial words — should still match
+        results = vault.search_semantic("neural deep")
+        titles = {n.title for n in results}
+        assert "Machine Learning Basics" in titles
+
+    def test_ranks_most_relevant_higher(self, temp_vault):
+        vault = VaultReader(temp_vault)
+        results = vault.search_semantic("neural networks")
+        assert results, "should return results"
+        # The note titled "Neural Networks" should rank highly
+        top_titles = [n.title for n in results[:3]]
+        assert "Neural Networks" in top_titles
+
+    def test_empty_query_returns_list(self, temp_vault):
+        vault = VaultReader(temp_vault)
+        results = vault.search_semantic("")
+        assert isinstance(results, list)
