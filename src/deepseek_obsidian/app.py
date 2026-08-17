@@ -131,6 +131,7 @@ class DeepSeekTuiApp(App):
             "toggle_sidebar": "Toggle Sidebar",
             "undo": "Undo",
             "quit": "Quit",
+            "command_palette": "Command Palette",
         }
         defaults = [
             ("cycle_permission", "tab"),
@@ -140,6 +141,7 @@ class DeepSeekTuiApp(App):
             ("toggle_sidebar", "ctrl+b"),
             ("undo", "ctrl+z"),
             ("quit", "ctrl+q"),
+            ("command_palette", "ctrl+p"),
         ]
         return [(kb.get(k, d), k, labels[k]) for k, d in defaults]
 
@@ -298,6 +300,19 @@ class DeepSeekTuiApp(App):
             "Try /search to find notes, /help for all commands."
         )
         self._notify("\n".join(lines))
+
+    def action_command_palette(self) -> None:
+        from deepseek_obsidian.tui.screens.palette import CommandPalette
+        commands = sorted(c.name for c in self._command_registry.list_commands())
+        self.push_screen(CommandPalette(commands), callback=self._run_palette_command)
+
+    def _run_palette_command(self, command: str | None) -> None:
+        if not command:
+            return
+        cmd = command.split()[0]
+        screen = self.screen
+        if isinstance(screen, MainScreen):
+            screen._handle_command(cmd, "", f"/{cmd}")
 
     def action_cycle_permission(self) -> None:
         new_level = self.permissions.cycle()
