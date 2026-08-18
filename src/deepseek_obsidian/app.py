@@ -352,16 +352,14 @@ class DeepSeekTuiApp(App):
             if target.exists():
                 target.unlink()
                 self._notify(f"Undo: deleted {target.name}")
-        elif entry.detail.startswith("Deleted"):
-            # Undo a deletion — recreate the file (content may be empty)
-            target.write_text(entry.previous_content)
-            self._notify(f"Undo: restored deleted note {target.name}")
-        elif entry.previous_content:
-            # Undo a modification — restore previous content
-            target.write_text(entry.previous_content)
-            self._notify(f"Undo: restored {target.name}")
         else:
-            self._notify(f"Cannot undo: no previous state saved for {target.name}")
+            # Undo a deletion or modification — restore previous content.
+            # Empty content is a valid previous state (e.g. an empty note).
+            target.write_text(entry.previous_content)
+            if entry.detail.startswith("Deleted"):
+                self._notify(f"Undo: restored deleted note {target.name}")
+            else:
+                self._notify(f"Undo: restored {target.name}")
 
         # Persist the updated audit trail
         self.permissions._save_audit()
@@ -467,7 +465,10 @@ class DeepSeekTuiApp(App):
 
     def _cmd_model(self, args: str) -> str:
         if not args.strip():
-            provider = self.ai_client.provider if self.ai_client else self.config.provider
+            provider = (
+                self.ai_client.provider.value if self.ai_client
+                else self.config.provider
+            )
             return (
                 f"Current: {provider}. "
                 "Usage: /model <provider> [model]\n"
@@ -577,11 +578,19 @@ class DeepSeekTuiApp(App):
         q_str = f"'{query}'" if query else "all notes"
         return f"Found {len(results)} notes matching {q_str}{filter_str}."
 
+    def _find_note(self, title: str):
+        """Find a note by title across all loaded vaults."""
+        for vault in self._vaults:
+            note = vault.resolve_wikilink(title)
+            if note:
+                return note
+        return None
+
     def _cmd_open(self, args: str) -> str:
-        if not self.vault or not args:
+        if not self._vaults or not args:
             return "No vault loaded. Use /vault <path> to open a vault first."
         link = args.strip().strip("[[").strip("]]")
-        note = self.vault.resolve_wikilink(link)
+        note = self._find_note(link)
         if note:
             screen = self.screen
             if isinstance(screen, MainScreen):
@@ -611,6 +620,8 @@ class DeepSeekTuiApp(App):
         else:
             return "No AI response to save. Send a message to the AI first."
         filename = args.strip() if args.strip() else "untitled.md"
+        if not filename.endswith(".md"):
+            filename += ".md"
         filepath = self.vault.vault_path / filename
         filepath.write_text(str(content))
         self.permissions.record_write(
@@ -632,6 +643,9 @@ class DeepSeekTuiApp(App):
             return f"Would link [[{from_note}]] -> [[{to_note}]] (Full Access required)."
         note = self.vault.resolve_wikilink(from_note)
         if note:
+            # Avoid duplicate links
+            if to_note.lower() in [link.lower() for link in note.wikilinks()]:
+                return f"[[{from_note}]] already links to [[{to_note}]]"
             prev = note.content
             content = prev + f"\n\nSee also: [[{to_note}]]"
             note.path.write_text(content)
@@ -798,28 +812,28 @@ class DeepSeekTuiApp(App):
         lines.append(f"  Wikilinks: {total_links}")
         lines.append(f"  Broken links: {broken}")
         lines.append(f"  Tags: {len(all_tags)}")
-        # Most-linked notes
+        # Most-linked notes (dedupe header across vaults)
         from deepseek_obsidian.engine.graph import build_graph
+        top_nodes: list = []
         for v in self._vaults:
             graph = build_graph(v)
             top = sorted(
                 graph.nodes.values(), key=lambda node: -node.degree
             )[:5]
-            if top:
-                lines.append("  Most connected notes:")
-                for node in top:
-                    if node.degree > 0:
-                        lines.append(
-                            f"    • [[{node.title}]] ({node.degree})"
-                        )
+            top_nodes.extend(n for n in top if n.degree > 0)
+        if top_nodes:
+            lines.append("  Most connected notes:")
+            for node in top_nodes[:5]:
+                lines.append(f"    • [[{node.title}]] ({node.degree})")
         return "\n".join(lines)
 
     def _cmd_tags(self, args: str) -> str:
-        if not self.vault:
+        if not self._vaults:
             return "No vault loaded."
         tag_filter = args.strip()
+        all_notes = [n for v in self._vaults for n in v.notes]
         if tag_filter:
-            matches = [n for n in self.vault.notes if tag_filter in n.tags]
+            matches = [n for n in all_notes if tag_filter in n.tags]
             if not matches:
                 return f"No notes with tag \"{tag_filter}\"."
             result = f"Notes tagged \"{tag_filter}\" ({len(matches)}):"
@@ -828,7 +842,7 @@ class DeepSeekTuiApp(App):
             return result
         # List all tags
         all_tags: dict[str, int] = {}
-        for n in self.vault.notes:
+        for n in all_notes:
             for t in n.tags:
                 all_tags[t] = all_tags.get(t, 0) + 1
         if not all_tags:
@@ -865,12 +879,14 @@ class DeepSeekTuiApp(App):
         return None
 
     def _cmd_backlinks(self, args: str) -> str:
-        if not self.vault:
+        if not self._vaults:
             return "No vault loaded. Use /vault <path> to open one."
         title = args.strip().strip("[[").strip("]]")
         if not title:
             return "Usage: /backlinks [[Note Title]] or /backlinks Note Title"
-        backlinks = self.vault.backlinks(title)
+        backlinks = []
+        for vault in self._vaults:
+            backlinks.extend(vault.backlinks(title))
         if not backlinks:
             return f"No notes link to \"{title}\"."
         result = f"{len(backlinks)} note(s) link to [[{title}]]:"
