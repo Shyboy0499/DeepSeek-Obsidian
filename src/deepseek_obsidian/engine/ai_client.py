@@ -93,27 +93,36 @@ class AIClient:
         context_notes: list[Note],
         permission_level: str = "ask",
     ) -> Message:
+        if permission_level == "full":
+            access = "FULL WRITE ACCESS"
+        elif permission_level == "review":
+            access = "PROPOSE-ONLY access (user must approve every change)"
+        else:
+            access = "READ-ONLY access"
         lines = [
-            "You are an AI agent with full vault access. "
+            f"You are an AI agent with {access} to the vault. "
             "The notes BELOW are already loaded. Read them — don't ask to.",
-            f"Write permission: {permission_level}.",
+            f"Permission level: {permission_level}.",
             "",
             "RULES:",
             "1. The notes below ARE visible to you. Never say you can't access them.",
             "2. If information isn't in the notes, say so briefly and suggest what to search for.",
             "3. Reference notes as [[exact title]].",
             "4. Be concise — this is a terminal.",
+            "5. When you see related notes, SUGGEST [[wikilinks]] between them.",
             "",
         ]
 
         if permission_level == "ask":
             lines.append(
                 "You can READ and ANALYZE notes. "
-                "Suggest edits (cannot apply them)."
+                "Suggest links and edits (cannot apply them)."
             )
-        elif permission_level in ("review", "full"):
+        elif permission_level == "review":
             lines.append(
-                "You can EDIT notes. To apply an edit that the user can accept:"
+                "You can PROPOSE edits and DRAFT new notes. "
+                "Every change is shown to the user for approval before applying. "
+                "Use this format to propose an edit:"
             )
             lines.append("")
             lines.append(
@@ -123,10 +132,17 @@ class AIClient:
                 "replacement text\n"
                 "---ENDPROPOSE"
             )
-        if permission_level == "full":
+        elif permission_level == "full":
             lines.append(
-                "FULL ACCESS: propose edits freely — "
-                "accepted with one click."
+                "You can EDIT notes directly. Use this format to apply an edit:"
+            )
+            lines.append("")
+            lines.append(
+                "---PROPOSE title=\"Note Title\"\n"
+                "exact text to replace (copy from the note above)\n"
+                "+++\n"
+                "replacement text\n"
+                "---ENDPROPOSE"
             )
 
         if context_notes:
