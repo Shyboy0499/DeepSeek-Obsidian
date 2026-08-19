@@ -434,6 +434,10 @@ class DeepSeekTuiApp(App):
             handler=self._cmd_stats,
         ))
         registry.register(Command(
+            name="suggest-links", description="Suggest wikilinks for a note",
+            handler=self._cmd_suggest_links,
+        ))
+        registry.register(Command(
             name="tags", description="List tags or filter by tag",
             handler=self._cmd_tags,
         ))
@@ -789,6 +793,33 @@ class DeepSeekTuiApp(App):
         )
         self.vault.refresh()
         return f"{action.capitalize()}ed tag '{tag}' on [[{title}]]"
+
+    def _cmd_suggest_links(self, args: str) -> str:
+        if not self._vaults:
+            return "No vault loaded."
+        title = args.strip().strip("[[").strip("]]")
+        if not title:
+            return "Usage: /suggest-links Note Title"
+        note = self._find_note(title)
+        if not note:
+            return f"Note not found: \"{title}\""
+        # Find related notes via semantic search, excluding existing links
+        existing = {link.lower() for link in note.wikilinks()}
+        existing.add(note.title.lower())
+        suggestions: list[str] = []
+        for vault in self._vaults:
+            for related in vault.search_semantic(
+                note.title + " " + note.content, limit=10
+            ):
+                name = related.title.lower()
+                if name not in existing and name not in suggestions:
+                    suggestions.append(name)
+        if not suggestions:
+            return f"No link suggestions found for \"{title}\"."
+        result = f"Suggested links for [[{title}]]:"
+        for s in suggestions[:5]:
+            result += f"\n  • [[{s}]]"
+        return result
 
     def _cmd_stats(self, args: str) -> str:
         if not self._vaults:
