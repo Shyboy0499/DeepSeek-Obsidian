@@ -16,7 +16,7 @@ class GraphScreen(Screen):
     """Shows a force-directed graph of notes and their wikilinks."""
 
     BINDINGS = [
-        ("q", "app.quit", "Quit"),
+        ("q", "dismiss", "Back"),
         ("escape", "dismiss", "Back"),
         ("r", "relayout", "Re-layout"),
         ("enter", "open_selected", "Open Note"),

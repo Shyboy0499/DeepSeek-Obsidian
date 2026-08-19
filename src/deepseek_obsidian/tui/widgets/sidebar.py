@@ -1,7 +1,5 @@
 """Sidebar widget — referenced notes panel, search results, and note preview."""
 
-from collections.abc import Callable
-
 from textual.containers import Container, Vertical
 from textual.widgets import Input, ListItem, ListView, Static
 
@@ -20,7 +18,8 @@ class NotePreview(Vertical):
         """Load and display note content from the given path."""
         preview = self.query_one("#preview-content", Static)
         try:
-            content = open(path).read()
+            with open(path, encoding="utf-8") as f:
+                content = f.read()
             # Show first 500 chars
             preview_text = content[:500]
             if len(content) > 500:
@@ -86,10 +85,6 @@ class SearchPanel(Vertical):
 
 class Sidebar(Container):
     """Sidebar with referenced notes, search, and preview panels."""
-
-    def __init__(self, on_preview: Callable[[str], None] | None = None):
-        super().__init__()
-        self._on_preview = on_preview
 
     def compose(self):
         yield ReferencedNotesPanel()
