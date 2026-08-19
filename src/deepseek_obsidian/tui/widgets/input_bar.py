@@ -12,7 +12,7 @@ class CommandHints(Static):
 
     def on_mount(self) -> None:
         self.update(
-            "[dim]/model  /search  /save  /clear  /help[/dim]"
+            "[dim]/search /read /graph /stats /help  •  Ctrl+P palette[/dim]"
         )
 
 
@@ -27,3 +27,10 @@ class InputBar(Container):
             )
             yield Button("Send", id="send-button", variant="primary")
         yield CommandHints()
+
+    def on_button_pressed(self, event: Button.Pressed) -> None:
+        if event.button.id == "send-button":
+            chat_input = self.query_one("#chat-input", Input)
+            chat_input.post_message(
+                Input.Submitted(chat_input, chat_input.value)
+            )

@@ -57,6 +57,9 @@ class DiffView(Container):
             if self._on_accept:
                 self._on_accept(edited)
             self.remove()
+        elif event.button.id == "diff-cancel":
+            # Cancel editing without rejecting
+            self.remove()
 
     def _start_editing(self) -> None:
         self._editing = True
@@ -71,4 +74,4 @@ class DiffView(Container):
         actions = self.query_one("#diff-actions", Horizontal)
         actions.remove_children()
         actions.mount(Button("Apply Edit", id="diff-apply", variant="success"))
-        actions.mount(Button("Cancel", id="diff-reject", variant="error"))
+        actions.mount(Button("Cancel", id="diff-cancel", variant="error"))
