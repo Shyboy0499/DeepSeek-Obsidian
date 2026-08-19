@@ -590,16 +590,15 @@ class DeepSeekTuiApp(App):
                 return note
         return None
 
-    def _cmd_open(self, args: str) -> str:
+    def _cmd_open(self, args: str) -> str | None:
         if not self._vaults or not args:
             return "No vault loaded. Use /vault <path> to open a vault first."
         link = args.strip().strip("[[").strip("]]")
         note = self._find_note(link)
         if note:
-            screen = self.screen
-            if isinstance(screen, MainScreen):
-                screen.sidebar.notes_panel.set_notes([(note.title, str(note.path))])
-            return f"Opened: {note.title}"
+            from deepseek_obsidian.tui.screens.reader import NoteReaderScreen
+            self.push_screen(NoteReaderScreen(note))
+            return None
         return f"Note not found: \"{link}\" — use /search to find notes by keyword"
 
     def _cmd_save(self, args: str) -> str:
