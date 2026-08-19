@@ -5,6 +5,8 @@ from textual.containers import Container, Horizontal, Vertical
 from textual.screen import Screen
 from textual.widgets import Button, Footer, Header, Input, Static
 
+from deepseek_obsidian.config.loader import save_config_setting
+
 
 class ConfigScreen(Screen):
     """Interactive settings editor."""
@@ -49,16 +51,29 @@ class ConfigScreen(Screen):
             self.dismiss()
 
     def action_save(self) -> None:
-        # Apply fields back to config object
-        self._config.provider = self._fields["provider"].value.strip() or self._config.provider
-        self._config.model = self._fields["model"].value.strip() or self._config.model
-        self._config.theme = self._fields["theme"].value.strip()
-        self._config.permission_default = (
+        # Apply fields back to config object and persist to disk
+        provider = self._fields["provider"].value.strip() or self._config.provider
+        model = self._fields["model"].value.strip() or self._config.model
+        theme = self._fields["theme"].value.strip()
+        permission = (
             self._fields["permission_default"].value.strip()
             or self._config.permission_default
         )
         try:
-            self._config.max_notes = int(self._fields["max_notes"].value)
+            max_notes = int(self._fields["max_notes"].value)
         except ValueError:
-            pass
+            max_notes = self._config.max_notes
+
+        self._config.provider = provider
+        self._config.model = model
+        self._config.theme = theme
+        self._config.permission_default = permission
+        self._config.max_notes = max_notes
+
+        # Persist to config.toml
+        save_config_setting("model", "provider", provider)
+        save_config_setting("model", "model", model)
+        save_config_setting("tui", "theme", theme)
+        save_config_setting("tui", "permission_default", permission)
+        save_config_setting("context", "max_notes", str(max_notes))
         self.dismiss()
