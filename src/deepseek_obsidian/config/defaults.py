@@ -9,11 +9,11 @@ DEFAULTS: dict[str, dict[str, Any]] = {
     },
     "model": {
         "provider": "deepseek",
-        "model": "deepseek-v4-flash",
+        "model": "deepseek-v4-pro",
     },
     "context": {
         "max_notes": 10,
-        "note_preview_chars": 500,
+        "note_preview_chars": 2000,
         "full_text_search": True,
         "incremental_index": True,
     },

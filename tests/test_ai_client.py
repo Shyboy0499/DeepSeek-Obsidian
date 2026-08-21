@@ -45,7 +45,7 @@ class TestAIProvider:
 
     def test_default_model_for_each_provider(self):
         models = {
-            AIProvider.DEEPSEEK: "deepseek-v4-flash",
+            AIProvider.DEEPSEEK: "deepseek-v4-pro",
             AIProvider.ANTHROPIC: "claude-sonnet-4-6",
             AIProvider.OPENAI: "gpt-4o",
             AIProvider.OLLAMA: "llama3",
@@ -56,7 +56,7 @@ class TestAIProvider:
 
 class TestCreateClient:
     def test_creates_deepseek_client_with_key(self):
-        client = create_client("deepseek", "deepseek-v4-flash", api_key="sk-test")
+        client = create_client("deepseek", "deepseek-v4-pro", api_key="sk-test")
         assert client.provider == AIProvider.DEEPSEEK
 
     def test_creates_ollama_client_without_key(self):
@@ -71,19 +71,19 @@ class TestCreateClient:
 
 class TestAIClient:
     def test_builds_request_headers(self):
-        client = AIClient(AIProvider.DEEPSEEK, "deepseek-v4-flash", api_key="sk-abc")
+        client = AIClient(AIProvider.DEEPSEEK, "deepseek-v4-pro", api_key="sk-abc")
         headers = client._headers()
         assert headers["Authorization"] == "Bearer sk-abc"
         assert headers["Content-Type"] == "application/json"
 
     def test_builds_request_body(self):
-        client = AIClient(AIProvider.DEEPSEEK, "deepseek-v4-flash")
+        client = AIClient(AIProvider.DEEPSEEK, "deepseek-v4-pro")
         messages = [
             Message(role="system", content="You are a note assistant."),
             Message(role="user", content="Summarize my notes."),
         ]
         body = client._build_body(messages)
-        assert body["model"] == "deepseek-v4-flash"
+        assert body["model"] == "deepseek-v4-pro"
         assert body["stream"] is True
         assert len(body["messages"]) == 2
         assert body["messages"][0]["role"] == "system"
@@ -94,7 +94,7 @@ class TestAIClient:
         vault = VaultReader(temp_vault)
         note = vault.resolve_wikilink("machine learning basics")
 
-        client = AIClient(AIProvider.DEEPSEEK, "deepseek-v4-flash")
+        client = AIClient(AIProvider.DEEPSEEK, "deepseek-v4-pro")
         prompt = client.build_system_prompt(
             context_notes=[note] if note else [],
             permission_level="ask",
