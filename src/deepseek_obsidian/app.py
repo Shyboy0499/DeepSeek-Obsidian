@@ -271,6 +271,7 @@ class DeepSeekTuiApp(App):
             self.context_builder = ContextBuilder(
                 vault, max_notes=self.config.max_notes,
                 session_path=session_path,
+                note_preview_chars=self.config.note_preview_chars,
             )
             if self.config.incremental_index:
                 import asyncio

@@ -21,7 +21,7 @@ class AIProvider(Enum):
     base_url: str
     default_model: str
 
-    DEEPSEEK = ("deepseek", "https://api.deepseek.com/v1", "deepseek-v4-flash")
+    DEEPSEEK = ("deepseek", "https://api.deepseek.com/v1", "deepseek-v4-pro")
     ANTHROPIC = ("anthropic", "https://api.anthropic.com/v1", "claude-sonnet-4-6")
     OPENAI = ("openai", "https://api.openai.com/v1", "gpt-4o")
     OLLAMA = ("ollama", "http://localhost:11434/v1", "llama3")
@@ -92,6 +92,7 @@ class AIClient:
         self,
         context_notes: list[Note],
         permission_level: str = "ask",
+        note_preview_chars: int = 2000,
     ) -> Message:
         if permission_level == "full":
             access = "FULL WRITE ACCESS"
@@ -153,7 +154,7 @@ class AIClient:
                 lines.append(f"### {note.title} (`{rel_path}`)")
                 if note.tags:
                     lines.append(f"Tags: {', '.join(note.tags)}")
-                lines.append(note.preview(max_chars=500))
+                lines.append(note.preview(max_chars=note_preview_chars))
                 lines.append("")
 
         return Message(role="system", content="\n".join(lines))

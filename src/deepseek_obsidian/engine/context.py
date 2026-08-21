@@ -63,9 +63,11 @@ class ContextBuilder:
     def __init__(
         self, vault: VaultReader, max_notes: int = 10,
         session_path: Path | None = None,
+        note_preview_chars: int = 2000,
     ):
         self.vault = vault
         self.max_notes = max_notes
+        self.note_preview_chars = note_preview_chars
         self.history = ChatHistory(session_path=session_path)
         if session_path:
             restored = self.history.load()
@@ -91,8 +93,8 @@ class ContextBuilder:
         return notes
 
     def _search_vault(self, query: str) -> list[Note]:
-        """Quick pass: title search. Falls back to full-text."""
-        results = self.vault.search_by_title(query)
+        """Rank notes by semantic relevance (TF-IDF), falling back to keyword."""
+        results = self.vault.search_semantic(query, limit=self.max_notes)
         if not results:
             results = self.vault.search_full_text(query)
         return results[:self.max_notes]
@@ -131,8 +133,11 @@ class ContextBuilder:
             context_notes = self.vault.notes[:self.max_notes]
 
         # Build system prompt (model-agnostic, just builds text)
-        client = AIClient(AIProvider.DEEPSEEK, model or "deepseek-v4-flash")
-        system_msg = client.build_system_prompt(context_notes, permission_level)
+        client = AIClient(AIProvider.DEEPSEEK, model or "deepseek-v4-pro")
+        system_msg = client.build_system_prompt(
+            context_notes, permission_level,
+            note_preview_chars=self.note_preview_chars,
+        )
 
         # Assemble full message list
         messages: list[Message] = [system_msg]
