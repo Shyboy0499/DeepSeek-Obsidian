@@ -4,6 +4,11 @@ An AI-native note-taking and research assistant for the terminal, with deep [Obs
 
 Built with **Python + Textual**.
 
+[![CI](https://github.com/Shyboy0499/DeepSeek-Obsidian/actions/workflows/ci.yml/badge.svg)](https://github.com/Shyboy0499/DeepSeek-Obsidian/actions/workflows/ci.yml)
+[![PyPI](https://img.shields.io/pypi/v/deepseek-obsidian)](https://pypi.org/project/deepseek-obsidian/)
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
+[![Python 3.12+](https://img.shields.io/badge/python-3.12+-blue.svg)](https://www.python.org/)
+
 ## Features
 
 - Chat with AI about your Obsidian notes — ask questions, get summaries, find connections
