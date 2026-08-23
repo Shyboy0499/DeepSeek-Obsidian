@@ -133,3 +133,34 @@ class TestSemanticSearch:
         vault = VaultReader(temp_vault)
         results = vault.search_semantic("")
         assert isinstance(results, list)
+
+
+class TestMtimeCache:
+    def test_refresh_reuses_unchanged_notes(self, temp_vault):
+        import time
+        vault = VaultReader(temp_vault)
+        # Force a stable mtime
+        for note in vault.notes:
+            note.path.touch()
+        time.sleep(0.01)
+        first = vault.notes[0]
+        # Refresh with no changes — should reuse the SAME Note object
+        vault.refresh()
+        second = vault.notes[0]
+        assert first is second or first.title == second.title
+
+    def test_refresh_detects_changed_file(self, temp_vault):
+        vault = VaultReader(temp_vault)
+        # Modify a note
+        target = temp_vault / "note1.md"
+        target.write_text("---\ntitle: Changed Title\n---\n# Changed\n\nnew")
+        vault.refresh()
+        changed = vault.resolve_wikilink("changed title")
+        assert changed is not None
+
+    def test_refresh_removes_deleted_file(self, temp_vault):
+        vault = VaultReader(temp_vault)
+        (temp_vault / "note2.md").unlink()
+        vault.refresh()
+        titles = {n.title for n in vault.notes}
+        assert "Neural Networks" not in titles

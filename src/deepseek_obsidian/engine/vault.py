@@ -103,10 +103,21 @@ def update_tags(note: Note, add: list[str] | None = None, remove: list[str] | No
     note.tags = tags
 
 
-def scan_vault(vault_path: Path, exclude_dirs: list[str] | None = None) -> list[Note]:
-    """Scan an Obsidian vault directory for all .md files, returning Note objects."""
+def scan_vault(
+    vault_path: Path,
+    exclude_dirs: list[str] | None = None,
+    cache: dict[Path, tuple[float, Note]] | None = None,
+) -> list[Note]:
+    """Scan an Obsidian vault directory for all .md files, returning Note objects.
+
+    If a `cache` dict (mapping path -> (mtime, Note)) is provided, unchanged files
+    (same mtime) are reused from cache instead of being re-parsed. This makes
+    re-scans cheap — only changed/new files are parsed.
+    """
     exclude_set = set(exclude_dirs or [])
     notes: list[Note] = []
+    cache = cache if cache is not None else {}
+    new_cache: dict[Path, tuple[float, Note]] = {}
 
     for dirpath_str, dirnames, filenames in os.walk(str(vault_path)):
         # Prune excluded directories before descending
@@ -117,10 +128,24 @@ def scan_vault(vault_path: Path, exclude_dirs: list[str] | None = None) -> list[
             if not filename.endswith(".md"):
                 continue
             md_file = dirpath / filename
-            content = md_file.read_text(encoding="utf-8")
-            title, tags = _parse_metadata(md_file, content)
-            notes.append(Note(path=md_file, title=title, tags=tags, content=content))
+            try:
+                mtime = md_file.stat().st_mtime
+            except OSError:
+                continue
 
+            cached = cache.get(md_file)
+            if cached is not None and cached[0] == mtime:
+                note = cached[1]
+            else:
+                content = md_file.read_text(encoding="utf-8")
+                title, tags = _parse_metadata(md_file, content)
+                note = Note(path=md_file, title=title, tags=tags, content=content)
+            notes.append(note)
+            new_cache[md_file] = (mtime, note)
+
+    # Drop entries for deleted files
+    cache.clear()
+    cache.update(new_cache)
     return notes
 
 
@@ -139,11 +164,12 @@ class VaultReader:
         self._by_slug: dict[str, Note] = {}
         self._on_change = on_change
         self._watcher_task: asyncio.Task | None = None
+        self._cache: dict[Path, tuple[float, Note]] = {}
         self.refresh()
 
     def refresh(self) -> None:
-        """Re-scan the vault and rebuild indexes."""
-        self._notes = scan_vault(self.vault_path, self.exclude_dirs)
+        """Re-scan the vault and rebuild indexes (incremental via mtime cache)."""
+        self._notes = scan_vault(self.vault_path, self.exclude_dirs, self._cache)
         self._by_slug = {}
         for note in self._notes:
             slug = note.title.lower().replace(" ", "-")
