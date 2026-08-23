@@ -100,16 +100,26 @@ def _deep_merge(base: dict[str, Any], override: dict[str, Any]) -> dict[str, Any
     return result
 
 
+API_KEY_ENV_VARS = {
+    "deepseek": "DEEPSEEK_API_KEY",
+    "anthropic": "ANTHROPIC_API_KEY",
+    "openai": "OPENAI_API_KEY",
+    "ollama": None,  # local — no key needed
+}
+
+
 def _read_api_key(config: dict[str, Any]) -> str | None:
     """Read API key from environment based on provider."""
     provider = config["model"]["provider"]
-    env_var_map = {
-        "deepseek": "DEEPSEEK_API_KEY",
-        "anthropic": "ANTHROPIC_API_KEY",
-        "openai": "OPENAI_API_KEY",
-        "ollama": None,  # local — no key needed
-    }
-    var_name = env_var_map.get(provider)
+    var_name = API_KEY_ENV_VARS.get(provider)
+    if var_name is None:
+        return None
+    return os.environ.get(var_name)
+
+
+def read_api_key_for(provider: str) -> str | None:
+    """Read the API key for a specific provider from the environment."""
+    var_name = API_KEY_ENV_VARS.get(provider)
     if var_name is None:
         return None
     return os.environ.get(var_name)

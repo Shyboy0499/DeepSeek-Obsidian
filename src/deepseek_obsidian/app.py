@@ -9,6 +9,7 @@ from textual.app import App
 
 from deepseek_obsidian.config.loader import (
     load_config,
+    read_api_key_for,
     save_model_config,
     save_vault_path,
 )
@@ -488,12 +489,15 @@ class DeepSeekTuiApp(App):
             from deepseek_obsidian.engine.ai_client import AIProvider
             prov = AIProvider.from_string(provider_name)
             chosen_model = model or prov.default_model
+            # Re-read API key for the new provider (keys differ per provider)
+            new_key = read_api_key_for(provider_name)
             self.ai_client = create_client(
                 provider_name, chosen_model,
-                api_key=self.config.api_key,
+                api_key=new_key,
             )
             self.config.provider = provider_name
             self.config.model = chosen_model
+            self.config.api_key = new_key
             save_model_config(provider_name, chosen_model)
             return (
                 f"Requested: {provider_name}/{chosen_model} (saved)\n"
