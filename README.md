@@ -7,14 +7,15 @@ Built with **Python + Textual**.
 ## Features
 
 - Chat with AI about your Obsidian notes — ask questions, get summaries, find connections
-- Full-text search across your vault
-- AI suggests `[[wikilinks]]` between related notes
-- Edit and create notes with a progressive permission system (Ask → Auto-Review → Full Access)
-- Streaming markdown responses in the terminal
-- Multi-provider support: DeepSeek (Chat + Reasoner), Anthropic (Claude), OpenAI (GPT), Ollama (local)
-- Vault auto-detection — finds your `.obsidian/` folders automatically
-- Audit trail with **Ctrl+Z** undo for all write operations
-- 4 built-in themes: Dracula, Nord, Catppuccin, Monokai
+- **Semantic search** — find notes by meaning, not just keywords
+- AI suggests `[[wikilinks]]` between related notes (`/suggest-links`)
+- Edit and create notes with a progressive permission system (Ask → Review → Full Access)
+- Streaming markdown responses with chain-of-thought reasoning
+- Note graph visualization (`/graph`) — see how notes connect
+- Multi-provider support: DeepSeek (V4 Flash + Pro), Anthropic (Claude), OpenAI (GPT), Ollama (local)
+- Vault auto-detection + multiple vault support
+- Audit trail with **Ctrl+Z** undo (persists across sessions)
+- Command palette (`Ctrl+P`) — fuzzy-find any command
 
 ## Install
 
@@ -24,7 +25,7 @@ pip install deepseek-obsidian
 
 # Homebrew (macOS)
 brew tap Shyboy0499/deepseek-obsidian
-brew install shyboy0499/deekseek-tui/deepseek-obsidian
+brew install deepseek-obsidian
 ```
 
 ## Quick Start
@@ -45,6 +46,7 @@ deepseek-obsidian --vault ~/Documents/MyVault
 | Key | Action |
 |-----|--------|
 | `Tab` | Cycle permission posture (Ask → Review → Full Access) |
+| `Ctrl+P` | Command palette (fuzzy-find commands) |
 | `Ctrl+N` | Focus sidebar |
 | `Ctrl+L` | Focus chat input |
 | `Ctrl+S` | Quick vault search |
@@ -57,17 +59,30 @@ deepseek-obsidian --vault ~/Documents/MyVault
 
 | Command | Action |
 |---------|--------|
-| `/model [provider] [model]` | Switch AI provider/model (e.g. `/model deepseek deepseek-reasoner`) |
-| `/search <query>` | Search vault, show results in sidebar |
-| `/open [[note]]` | Open a note by wikilink in the sidebar |
-| `/save [filename]` | Save last AI response as a new note |
-| `/link <from> -> <to>` | Create a wikilink between two notes |
-| `/vault <path\|number>` | Switch to a different vault (or pick from numbered list) |
-| `/export [path]` | Export chat transcript to markdown |
-| `/clear [--save]` | Clear current chat (optionally save first) |
-| `/theme [name]` | Switch theme (dracula, nord, catppuccin, monokai) |
+| `/model [provider] [model]` | Switch AI provider/model |
+| `/search [flags] <query>` | Search vault (`--semantic`, `--tag`, `--from`, `--to`) |
+| `/read <note>` | Read a full note (markdown rendered) |
+| `/open [[note]]` | Open a note in the reader |
+| `/edit <note>` | Edit a note in your `$EDITOR` |
+| `/new <title>` | Create a new note |
+| `/delete <note>` | Delete a note (undoable) |
+| `/today` | Open/create today's daily note |
+| `/tag add\|remove <note> <tag>` | Manage frontmatter tags |
+| `/tags [tag]` | List all tags or filter by tag |
+| `/suggest-links <note>` | Suggest wikilinks for a note |
+| `/backlinks [[note]]` | Show notes linking to a note |
+| `/link <from> -> <to>` | Create a wikilink between notes |
+| `/graph` | Visualize note connections |
+| `/stats` | Vault health statistics |
+| `/vault [list\|add <path>]` | Manage vaults |
+| `/export [--json] [path]` | Export chat transcript |
+| `/clear [--save]` | Clear current chat |
+| `/config` | Edit settings interactively |
+| `/theme [dark\|light\|...]` | Switch theme |
 | `/perm [ask\|review\|full]` | Set permission posture |
-| `/help` | Show help overlay with all commands and keybindings |
+| `/save [filename]` | Save last AI response as a note |
+| `/help` | Show help overlay |
+| `!command` | Run a shell command |
 
 ## Configuration
 
@@ -80,15 +95,16 @@ exclude_dirs = [".git", "_templates", ".trash"]
 
 [model]
 provider = "deepseek"
-model = "deepseek-chat"
+model = "deepseek-v4-pro"
 
 [context]
 max_notes = 10
-note_preview_chars = 500
+note_preview_chars = 2000
 full_text_search = true
+incremental_index = true
 
 [tui]
-theme = "dracula"
+theme = ""            # empty = terminal-native colors
 permission_default = "ask"
 sidebar_width = 35
 ```
@@ -102,7 +118,7 @@ API keys are read from environment variables — never stored in config:
 
 | Provider | Models |
 |----------|--------|
-| DeepSeek | `deepseek-chat`, `deepseek-reasoner` |
+| DeepSeek | `deepseek-v4-pro`, `deepseek-v4-flash` |
 | Anthropic | `claude-sonnet-4-6`, `claude-opus-4-8`, `claude-haiku-4-5` |
 | OpenAI | `gpt-4o`, `gpt-4o-mini` |
 | Ollama | `llama3`, `mistral`, `codellama`, `phi3` |
